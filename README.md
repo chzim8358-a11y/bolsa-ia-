@@ -12,3 +12,9 @@ streamlit run app.py
 ## Observação
 
 Os dados vêm do Yahoo Finance via yfinance e não devem ser tratados como feed profissional em tempo real. Para uso financeiro real, substitua por um provedor licenciado e implemente autenticação/gestão de risco antes de qualquer integração com ordens.
+
+
+## v4 — Alertas
+- Scanner automático com limiar configurável.
+- Destaque visual quando um ativo atinge o score definido.
+- Atualização periódica mantida.

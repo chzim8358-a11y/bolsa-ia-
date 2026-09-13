@@ -9,13 +9,15 @@ st.title("📈 BolsaIA — monitor automático")
 st.caption("Protótipo educacional: o motor combina indicadores técnicos. Não é recomendação de investimento.")
 
 ativos = list(ATIVOS_B3.keys())
-col1, col2, col3 = st.columns(3)
+col1, col2, col3, col4 = st.columns(4)
 with col1:
     selecionados = st.multiselect("Ativos monitorados", ativos, default=["PETR4", "VALE3", "ITUB4", "BBAS3", "BBDC4"])
 with col2:
     intervalo = st.selectbox("Candles", ["1m", "5m", "15m", "30m", "1h"], index=1)
 with col3:
     st.metric("Atualização", "25 s")
+with col4:
+    limiar = st.slider("Alerta a partir de", 50, 95, 75)
 
 @st.cache_data(ttl=20, show_spinner=False)
 def carregar(ticker, intervalo):
@@ -55,6 +57,11 @@ def painel():
 
     tabela = pd.DataFrame(resultados)
     st.subheader("🔎 Scanner de oportunidades")
+    alertas = tabela[tabela["Score"].fillna(-1) >= limiar].sort_values("Score", ascending=False)
+    if not alertas.empty:
+        st.success("🚨 Oportunidade detectada: " + ", ".join(f"{r.Ativo} ({int(r.Score)}/100)" for _, r in alertas.iterrows()))
+    else:
+        st.info(f"Nenhum ativo atingiu o nível de alerta de {limiar}/100.")
     st.dataframe(tabela, use_container_width=True, hide_index=True,
                  column_config={
                      "Preço": st.column_config.NumberColumn(format="R$ %.2f"),
