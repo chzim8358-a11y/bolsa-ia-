@@ -17,3 +17,8 @@ O app continua sendo demonstrativo e não envia ordens reais.
 
 ## V30
 Home inteligente em linguagem simples para iniciantes, preservando scanner, análise, risco, FIIs, login, configurações e atalhos da versão anterior.
+
+## V32
+- Gráfico profissional com candles + MM20 + MM50 + MM200 + volume.
+- Leitura rápida do último preço, médias e volume.
+- Mantém Scanner, ranking, risco, carteira simulada e navegação das versões anteriores.

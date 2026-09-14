@@ -12,7 +12,7 @@ from analisador import analisar, analisar_candles, calcular_plano
 from dividendos import obter_dividendos_yahoo
 
 st.set_page_config(
-    page_title="BolsaIA V31 | Inteligência de Mercado",
+    page_title="BolsaIA V32 | Inteligência de Mercado",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -106,7 +106,7 @@ div[data-testid="stMetric"] { background:rgba(13,24,42,.82); border:1px solid rg
   <div class="brand-row">
     <img class="brand-logo" src="data:image/png;base64,LOGO_B64" />
     <div>
-      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V31</span></h1>
+      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V32</span></h1>
       <div class="tagline">Inteligência de mercado para análise técnica, radar e gestão de risco.</div>
       <div class="mini"><span class="chip">⚡ Scanner inteligente</span><span class="chip">📊 Análise técnica</span><span class="chip green">🛡️ Carteira simulada</span></div>
     </div>
@@ -180,7 +180,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 st.caption("Ferramenta educacional. Indicadores, scores e cenários são hipotéticos e não constituem recomendação de investimento.")
-st.caption("🧭 V31 · Painel de demonstração · Preços dependem da fonte configurada · Nenhuma ordem real é enviada")
+st.caption("🧭 V32 · Painel de demonstração · Preços dependem da fonte configurada · Nenhuma ordem real é enviada")
 
 # V15: status operacional, qualidade do dado e horário da última atualização.
 def _status_mercado():
@@ -633,7 +633,7 @@ def painel():
     )
 
     csv_scanner = tabela.to_csv(index=False).encode("utf-8")
-    st.download_button("⬇️ Exportar scanner CSV", csv_scanner, file_name="bolsaia_scanner_v30.csv", mime="text/csv", key="export_scanner_v27")
+    st.download_button("⬇️ Exportar scanner CSV", csv_scanner, file_name="bolsaia_scanner_v32.csv", mime="text/csv", key="export_scanner_v27")
 
     # V13: resumo de risco do scanner.
     st.markdown('<div class="section">🛡️ Gestão de risco por ativo</div>', unsafe_allow_html=True)
@@ -663,7 +663,7 @@ def painel():
 
     # V17: snapshot completo para auditoria da sessão.
     csv_snapshot = tabela.to_csv(index=False).encode("utf-8")
-    st.download_button("⬇️ Exportar snapshot completo CSV", csv_snapshot, file_name="bolsaia_snapshot_v30.csv", mime="text/csv", key="export_snapshot_v27")
+    st.download_button("⬇️ Exportar snapshot completo CSV", csv_snapshot, file_name="bolsaia_snapshot_v32.csv", mime="text/csv", key="export_snapshot_v27")
 
     # Radar V9: ranking visual das melhores pontuações entre os ativos monitorados.
     st.markdown('<div class="section">🏆 Radar de Oportunidades</div>', unsafe_allow_html=True)
@@ -797,7 +797,7 @@ def painel():
             st.caption("A evolução é registrada somente durante esta sessão do app; ela não representa histórico de rentabilidade real.")
 
             csv_carteira = carteira_df.to_csv(index=False).encode("utf-8")
-            st.download_button("⬇️ Exportar carteira CSV", csv_carteira, file_name="bolsaia_carteira_v30.csv", mime="text/csv")
+            st.download_button("⬇️ Exportar carteira CSV", csv_carteira, file_name="bolsaia_carteira_v32.csv", mime="text/csv")
     else:
         st.info("Nenhuma posição simulada cadastrada.")
 
@@ -906,30 +906,49 @@ def painel():
         perda_max = qtd_final_det * perda_unit
         st.caption(f"Se o stop técnico fosse atingido, a perda simulada nessa quantidade seria de aproximadamente R$ {perda_max:,.2f}. O cálculo é hipotético e não considera custos, impostos, slippage ou gaps.".replace(",", "X").replace(".", ",").replace("X", "."))
 
-        st.markdown("### 🕯️ Gráfico de Candles")
+        st.markdown("### 📈 Gráfico profissional V32")
         try:
             import plotly.graph_objects as go
-            grafico_df = df.dropna(subset=["Open", "High", "Low", "Close"]).tail(120)
-            fig = go.Figure(data=[go.Candlestick(
-                x=grafico_df.index,
-                open=grafico_df["Open"], high=grafico_df["High"],
-                low=grafico_df["Low"], close=grafico_df["Close"],
-                name=ativo
-            )])
-            fig.add_trace(go.Scatter(x=grafico_df.index, y=grafico_df["MM20"], name="MM20", mode="lines"))
-            fig.add_trace(go.Scatter(x=grafico_df.index, y=grafico_df["MM50"], name="MM50", mode="lines"))
-            fig.update_layout(height=520, xaxis_rangeslider_visible=False, margin=dict(l=10, r=10, t=30, b=10),
-                              xaxis_title="Tempo", yaxis_title="Preço (R$)")
-            st.plotly_chart(fig, use_container_width=True, key=f"candles_{ativo}")
-            st.markdown("### 🤖 Leitura das Candles")
+            from plotly.subplots import make_subplots
+            grafico_df = df.dropna(subset=["Open", "High", "Low", "Close"]).tail(160).copy()
+            grafico_df["Volume"] = grafico_df["Volume"].fillna(0)
+            fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.07, row_heights=[0.74, 0.26])
+            fig.add_trace(go.Candlestick(
+                x=grafico_df.index, open=grafico_df["Open"], high=grafico_df["High"],
+                low=grafico_df["Low"], close=grafico_df["Close"], name=ativo
+            ), row=1, col=1)
+            if "MM20" in grafico_df:
+                fig.add_trace(go.Scatter(x=grafico_df.index, y=grafico_df["MM20"], name="MM20", mode="lines"), row=1, col=1)
+            if "MM50" in grafico_df:
+                fig.add_trace(go.Scatter(x=grafico_df.index, y=grafico_df["MM50"], name="MM50", mode="lines"), row=1, col=1)
+            if "MM200" in grafico_df:
+                fig.add_trace(go.Scatter(x=grafico_df.index, y=grafico_df["MM200"], name="MM200", mode="lines"), row=1, col=1)
+            fig.add_trace(go.Bar(x=grafico_df.index, y=grafico_df["Volume"], name="Volume", opacity=0.55), row=2, col=1)
+            fig.update_layout(height=650, xaxis_rangeslider_visible=False, hovermode="x unified",
+                              margin=dict(l=10, r=10, t=30, b=10), legend=dict(orientation="h"))
+            fig.update_yaxes(title_text="Preço (R$)", row=1, col=1)
+            fig.update_yaxes(title_text="Volume", row=2, col=1)
+            fig.update_xaxes(title_text="Tempo", row=2, col=1)
+            st.plotly_chart(fig, use_container_width=True, key=f"candles_v32_{ativo}")
+
+            st.markdown("### 🎛️ Leitura rápida do gráfico")
+            g1, g2, g3, g4 = st.columns(4)
+            close_now = float(grafico_df["Close"].iloc[-1])
+            close_prev = float(grafico_df["Close"].iloc[-2]) if len(grafico_df) > 1 else close_now
+            g1.metric("Último preço", f"R$ {close_now:.2f}", f"{((close_now/close_prev)-1)*100:+.2f}%" if close_prev else None)
+            g2.metric("MM20", f"R$ {float(grafico_df['MM20'].iloc[-1]):.2f}" if pd.notna(grafico_df['MM20'].iloc[-1]) else "N/D")
+            g3.metric("MM50", f"R$ {float(grafico_df['MM50'].iloc[-1]):.2f}" if pd.notna(grafico_df['MM50'].iloc[-1]) else "N/D")
+            g4.metric("Volume", f"{float(grafico_df['Volume'].iloc[-1]):,.0f}".replace(",", "."))
+
+            st.markdown("### 🤖 Leitura das candles")
             cc1, cc2 = st.columns(2)
             cc1.metric("Última vela", candle_padroes[0] if candle_padroes else "Sem padrão")
             cc2.metric("Viés do padrão", candle_leitura)
             for p in candle_padroes:
                 st.write("•", p)
-            st.caption("A leitura de candles é baseada em padrões técnicos simples e não constitui recomendação de investimento.")
+            st.caption("O gráfico é uma ferramenta educacional. Médias, volume e candles ajudam a interpretar o histórico, mas não garantem movimentos futuros.")
         except ImportError:
-            st.warning("Gráfico de candles requer Plotly. Adicione a dependência 'plotly' ao requirements.txt.")
+            st.warning("Gráfico profissional requer Plotly. Adicione 'plotly' ao requirements.txt.")
         st.line_chart(df[["Close", "MM20", "MM50"]].dropna())
         st.write("**Motivos do sinal:**")
         for m in motivos:
@@ -942,7 +961,7 @@ def painel():
         st.caption("Fallback: Yahoo Finance. Ele não deve ser tratado como feed profissional em tempo real.")
 
 
-st.markdown("<div class='footer'>BolsaIA V28 · Inteligência de Mercado · Demonstração educacional · Dados dependem da fonte configurada</div>", unsafe_allow_html=True)
+st.markdown("<div class='footer'>BolsaIA V32 · Inteligência de Mercado · Demonstração educacional · Dados dependem da fonte configurada</div>", unsafe_allow_html=True)
 
 if hasattr(st, "fragment"):
     @st.fragment(run_every="5s")
