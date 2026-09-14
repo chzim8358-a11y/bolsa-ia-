@@ -1,23 +1,39 @@
-def analisar(ultima):
+def analisar(ultima, candle_leitura="NEUTRO"):
     pontos = 50
     motivos = []
+
     if ultima["Close"] > ultima["MM20"]:
-        pontos += 10; motivos.append("preço acima da MM20")
+        pontos += 8; motivos.append("preço acima da MM20")
     else:
-        pontos -= 10; motivos.append("preço abaixo da MM20")
+        pontos -= 8; motivos.append("preço abaixo da MM20")
     if ultima["MM20"] > ultima["MM50"]:
-        pontos += 15; motivos.append("MM20 acima da MM50")
+        pontos += 12; motivos.append("MM20 acima da MM50")
     else:
-        pontos -= 15; motivos.append("MM20 abaixo da MM50")
+        pontos -= 12; motivos.append("MM20 abaixo da MM50")
+
     rsi = float(ultima["RSI"])
     if rsi < 30:
-        pontos += 10; motivos.append("RSI em sobrevenda")
+        pontos += 8; motivos.append("RSI em sobrevenda")
     elif rsi > 70:
-        pontos -= 10; motivos.append("RSI em sobrecompra")
+        pontos -= 8; motivos.append("RSI em sobrecompra")
     else:
         motivos.append("RSI em faixa intermediária")
-    if ultima["Volume"] > ultima["VolumeMedia20"]:
-        pontos += 10; motivos.append("volume acima da média")
+
+    if float(ultima["Volume"]) > float(ultima["VolumeMedia20"]):
+        pontos += 8; motivos.append("volume acima da média")
+
+    macd = float(ultima["MACD"])
+    macd_sinal = float(ultima["MACD_Sinal"])
+    if macd > macd_sinal:
+        pontos += 8; motivos.append("MACD acima da linha de sinal")
+    else:
+        pontos -= 8; motivos.append("MACD abaixo da linha de sinal")
+
+    if candle_leitura == "ALTA":
+        pontos += 6; motivos.append("padrão de candle com viés de alta")
+    elif candle_leitura == "BAIXA":
+        pontos -= 6; motivos.append("padrão de candle com viés de baixa")
+
     pontos = max(0, min(100, int(round(pontos))))
     if pontos >= 75: sinal = "COMPRA — forte"
     elif pontos >= 60: sinal = "COMPRA — moderado"

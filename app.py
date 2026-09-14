@@ -48,12 +48,14 @@ def carregar_ativo(ticker, intervalo):
 
 def analisar_ativo(ticker):
     df = calcular_indicadores(carregar_ativo(ticker, intervalo))
-    valid = df.dropna(subset=["MM20", "MM50", "RSI", "VolumeMedia20"])
+    valid = df.dropna(subset=["MM20", "MM50", "RSI", "VolumeMedia20", "MACD", "MACD_Sinal"])
     if valid.empty:
-        raise ValueError("Candles insuficientes para MM20/MM50/RSI.")
+        raise ValueError("Candles insuficientes para os indicadores.")
     ultima = valid.iloc[-1]
-    pontos, sinal, motivos = analisar(ultima)
-    return df, ultima, pontos, sinal, motivos
+    grafico_df = df.dropna(subset=["Open", "High", "Low", "Close"]).tail(120)
+    _, candle_leitura, candle_padroes = analisar_candles(grafico_df)
+    pontos, sinal, motivos = analisar(ultima, candle_leitura=candle_leitura)
+    return df, ultima, pontos, sinal, motivos, candle_leitura, candle_padroes
 
 
 def normalizar_cotacao_df(df):
@@ -99,7 +101,7 @@ def painel():
 
     for ticker in selecionados:
         try:
-            df, ultima, pontos, sinal, motivos = analisar_ativo(ticker)
+            df, ultima, pontos, sinal, motivos, candle_leitura, candle_padroes = analisar_ativo(ticker)
             preco = realtime_prices.get(ticker, float(ultima["Close"]))
             resultados.append({
                 "Ativo": ticker,
@@ -110,12 +112,13 @@ def painel():
                 "Volume": float(ultima["Volume"]),
                 "Score": pontos,
                 "Sinal": sinal,
+                "Candle": candle_leitura,
             })
-            detalhes[ticker] = (df, ultima, pontos, sinal, motivos, preco)
+            detalhes[ticker] = (df, ultima, pontos, sinal, motivos, preco, candle_leitura, candle_padroes)
         except Exception as e:
             resultados.append({
                 "Ativo": ticker, "Preço": None, "RSI": None, "MM20": None,
-                "MM50": None, "Volume": None, "Score": None, "Sinal": f"ERRO: {e}",
+                "MM50": None, "Volume": None, "Score": None, "Sinal": f"ERRO: {e}", "Candle": "ERRO",
             })
 
     tabela = pd.DataFrame(resultados)
@@ -137,13 +140,14 @@ def painel():
             "MM50": st.column_config.NumberColumn(format="R$ %.2f"),
             "Volume": st.column_config.NumberColumn(format="%.0f"),
             "Score": st.column_config.NumberColumn(format="%d/100"),
+            "Candle": st.column_config.TextColumn(),
         },
     )
 
     disponiveis = [x for x in selecionados if x in detalhes]
     if disponiveis:
         ativo = st.selectbox("Ver análise detalhada", disponiveis)
-        df, ultima, pontos, sinal, motivos, preco = detalhes[ativo]
+        df, ultima, pontos, sinal, motivos, preco, candle_leitura, candle_padroes = detalhes[ativo]
         try:
             div = dividendos_atualizados(ativo)
         except Exception as e:
@@ -205,8 +209,17 @@ def painel():
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("Preço realtime", f"R$ {preco:.2f}")
         c2.metric("RSI", f"{ultima.RSI:.1f}")
-        c3.metric("Score", f"{pontos}/100")
+        c3.metric("Score IA", f"{pontos}/100")
         c4.metric("Sinal", sinal)
+
+        st.markdown("### 🧠 Confluência da IA")
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Tendência", "ALTA" if ultima["MM20"] > ultima["MM50"] else "BAIXA")
+        m2.metric("MACD", "POSITIVO" if ultima["MACD"] > ultima["MACD_Sinal"] else "NEGATIVO")
+        m3.metric("Candle", candle_leitura)
+        distancia_suporte = ((float(ultima["Close"]) / float(ultima["Suporte20"])) - 1) * 100 if float(ultima["Suporte20"]) else 0
+        m4.metric("Suporte 20", f"R$ {float(ultima['Suporte20']):.2f}", help=f"Preço está {distancia_suporte:.1f}% acima do suporte recente.")
+        st.caption("O Score IA combina tendência, RSI, volume, MACD e leitura de candles. É um modelo de análise técnica educacional; não garante movimentos futuros.")
         st.markdown("### 🕯️ Gráfico de Candles")
         try:
             import plotly.graph_objects as go
@@ -222,12 +235,11 @@ def painel():
             fig.update_layout(height=520, xaxis_rangeslider_visible=False, margin=dict(l=10, r=10, t=30, b=10),
                               xaxis_title="Tempo", yaxis_title="Preço (R$)")
             st.plotly_chart(fig, use_container_width=True, key=f"candles_{ativo}")
-            titulo, leitura, padroes = analisar_candles(grafico_df)
             st.markdown("### 🤖 Leitura das Candles")
             cc1, cc2 = st.columns(2)
-            cc1.metric("Última vela", titulo)
-            cc2.metric("Viés do padrão", leitura)
-            for p in padroes:
+            cc1.metric("Última vela", candle_padroes[0] if candle_padroes else "Sem padrão")
+            cc2.metric("Viés do padrão", candle_leitura)
+            for p in candle_padroes:
                 st.write("•", p)
             st.caption("A leitura de candles é baseada em padrões técnicos simples e não constitui recomendação de investimento.")
         except ImportError:
