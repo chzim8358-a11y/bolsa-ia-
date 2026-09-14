@@ -9,8 +9,8 @@ from indicadores import calcular_indicadores
 from analisador import analisar, analisar_candles, calcular_plano
 from dividendos import obter_dividendos_yahoo
 
-st.set_page_config(page_title="BolsaIA v13", page_icon="🚀", layout="wide")
-st.title("🚀 BolsaIA v13 — Radar + Gestão de Risco")
+st.set_page_config(page_title="BolsaIA v14", page_icon="🚀", layout="wide")
+st.title("🚀 BolsaIA v14 — Radar + Gestão de Risco")
 st.caption("Motor educacional de análise técnica + acompanhamento de carteira simulada. Não é recomendação de investimento.")
 
 # V11: status operacional e horário da última atualização do painel.
@@ -51,22 +51,32 @@ with col3:
 with col4:
     limiar = st.slider("Alerta a partir de", 50, 95, 75)
 
-# V13: parâmetros de gestão de risco para a simulação.
+if st.button("🔄 Atualizar agora", use_container_width=False):
+    st.cache_data.clear()
+    st.rerun()
+
+# V14: parâmetros de gestão de risco + monitoramento de mudanças de sinal.
 with st.sidebar:
     st.markdown("### 🛡️ Gestão de risco")
     risco_reais = st.number_input("Risco máximo por operação (R$)", min_value=1.0, value=100.0, step=10.0)
     capital_risco = st.number_input("Capital disponível (R$)", min_value=100.0, value=10000.0, step=500.0)
 
 
+@st.cache_data(ttl=4, show_spinner=False)
+def _carregar_ativo_cache(ticker, intervalo, usar_btg_flag, api_key_marker):
+    if usar_btg_flag:
+        # A chave é usada apenas como marcador de cache; não é exibida nem retornada.
+        return dados_btg_realtime(ticker, intervalo=intervalo, secrets=st.secrets)
+    return dados_yahoo(ticker, intervalo=intervalo)
+
 def carregar_ativo(ticker, intervalo):
-    if usar_btg:
-        return dados_btg_realtime(ticker, intervalo=intervalo, secrets=secrets)
-    return dados_yahoo(ticker, periodo="1d", intervalo=intervalo)
+    marker = "btg" if usar_btg else "yahoo"
+    return _carregar_ativo_cache(ticker, intervalo, usar_btg, marker)
 
 
 def analisar_ativo(ticker):
     df = calcular_indicadores(carregar_ativo(ticker, intervalo))
-    valid = df.dropna(subset=["MM20", "MM50", "RSI", "VolumeMedia20", "MACD", "MACD_Sinal"])
+    valid = df.dropna(subset=["MM20", "MM50", "RSI", "VolumeMedia20", "MACD", "MACD_Sinal", "ATR14"])
     if valid.empty:
         raise ValueError("Candles insuficientes para os indicadores.")
     ultima = valid.iloc[-1]
@@ -139,6 +149,8 @@ def painel():
                 "RSI": float(ultima["RSI"]),
                 "MM20": float(ultima["MM20"]),
                 "MM50": float(ultima["MM50"]),
+                "MM200": float(ultima["MM200"]) if pd.notna(ultima.get("MM200")) else None,
+                "ADX": float(ultima["ADX14"]) if pd.notna(ultima.get("ADX14")) else None,
                 "Volume": float(ultima["Volume"]),
                 "Score": pontos,
                 "Sinal": sinal,
@@ -157,11 +169,27 @@ def painel():
         except Exception as e:
             resultados.append({
                 "Ativo": ticker, "Preço": None, "RSI": None, "MM20": None,
-                "MM50": None, "Volume": None, "Score": None, "Sinal": f"ERRO: {e}", "Candle": "ERRO", "R/R": None, "Yield 12m": None, "Variação": None, "ATR %": None, "Stop": None, "Alvo": None, "Risco/ação": None, "Dist. stop %": None, "Qtd. risco": None,
+                "MM50": None, "MM200": None, "ADX": None, "Volume": None, "Score": None, "Sinal": f"ERRO: {e}", "Candle": "ERRO", "R/R": None, "Yield 12m": None, "Variação": None, "ATR %": None, "Stop": None, "Alvo": None, "Risco/ação": None, "Dist. stop %": None, "Qtd. risco": None,
             })
 
     tabela = pd.DataFrame(resultados)
+
+    # V14: histórico de mudanças de sinal para não depender apenas do alerta atual.
+    atual_sinais = {str(r["Ativo"]): r["Sinal"] for _, r in tabela.iterrows() if pd.notna(r.get("Sinal"))}
+    anteriores = st.session_state.get("ultimos_sinais", {})
+    mudancas = []
+    for ativo_sinal, sinal_atual in atual_sinais.items():
+        if ativo_sinal in anteriores and anteriores[ativo_sinal] != sinal_atual:
+            mudancas.append(f"{ativo_sinal}: {anteriores[ativo_sinal]} → {sinal_atual}")
+    st.session_state.ultimos_sinais = atual_sinais
+    st.session_state.ultima_atualizacao_painel = pd.Timestamp.now(tz="America/Sao_Paulo")
+    if mudancas:
+        st.warning("🔔 Mudança de sinal: " + " · ".join(mudancas))
+
     st.subheader("🔎 Scanner de oportunidades")
+    stamp = st.session_state.get("ultima_atualizacao_painel")
+    if stamp is not None:
+        st.caption(f"🕒 Última atualização dos dados do scanner: {stamp.strftime('%d/%m/%Y %H:%M:%S')} (Brasília) · ciclo automático de 5 s")
     alertas = tabela[tabela["Score"].fillna(-1) >= limiar].sort_values("Score", ascending=False)
     if not alertas.empty:
         st.success("🚨 Oportunidade detectada: " + ", ".join(
@@ -177,6 +205,8 @@ def painel():
             "RSI": st.column_config.NumberColumn(format="%.1f"),
             "MM20": st.column_config.NumberColumn(format="R$ %.2f"),
             "MM50": st.column_config.NumberColumn(format="R$ %.2f"),
+            "MM200": st.column_config.NumberColumn(format="R$ %.2f"),
+            "ADX": st.column_config.NumberColumn(format="%.1f"),
             "Volume": st.column_config.NumberColumn(format="%.0f"),
             "Score": st.column_config.NumberColumn(format="%d/100"),
             "Candle": st.column_config.TextColumn(),
@@ -323,7 +353,7 @@ def painel():
             st.caption("A evolução é registrada somente durante esta sessão do app; ela não representa histórico de rentabilidade real.")
 
             csv_carteira = carteira_df.to_csv(index=False).encode("utf-8")
-            st.download_button("⬇️ Exportar carteira CSV", csv_carteira, file_name="bolsaia_carteira_v13.csv", mime="text/csv")
+            st.download_button("⬇️ Exportar carteira CSV", csv_carteira, file_name="bolsaia_carteira_v14.csv", mime="text/csv")
     else:
         st.info("Nenhuma posição simulada cadastrada.")
 
@@ -397,12 +427,14 @@ def painel():
         c4.metric("Sinal", sinal)
 
         st.markdown("### 🧠 Confluência da IA")
-        m1, m2, m3, m4 = st.columns(4)
+        m1, m2, m3, m4, m5 = st.columns(5)
         m1.metric("Tendência", "ALTA" if ultima["MM20"] > ultima["MM50"] else "BAIXA")
         m2.metric("MACD", "POSITIVO" if ultima["MACD"] > ultima["MACD_Sinal"] else "NEGATIVO")
         m3.metric("Candle", candle_leitura)
+        adx_txt = f"{float(ultima['ADX14']):.1f}" if pd.notna(ultima.get("ADX14")) else "N/D"
+        m4.metric("ADX 14", adx_txt, help="Acima de ~25 sugere tendência mais forte; abaixo disso pode indicar lateralização.")
         distancia_suporte = ((float(ultima["Close"]) / float(ultima["Suporte20"])) - 1) * 100 if float(ultima["Suporte20"]) else 0
-        m4.metric("Suporte 20", f"R$ {float(ultima['Suporte20']):.2f}", help=f"Preço está {distancia_suporte:.1f}% acima do suporte recente.")
+        m5.metric("Suporte 20", f"R$ {float(ultima['Suporte20']):.2f}", help=f"Preço está {distancia_suporte:.1f}% acima do suporte recente.")
         st.caption("O Score IA combina tendência, RSI, volume, MACD e leitura de candles. É um modelo de análise técnica educacional; não garante movimentos futuros.")
 
         st.markdown("### 🎯 Plano técnico")
