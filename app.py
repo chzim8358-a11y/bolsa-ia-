@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import base64
+import math
 from pathlib import Path
 
 from dados import (
@@ -12,7 +13,7 @@ from analisador import analisar, analisar_candles, calcular_plano
 from dividendos import obter_dividendos_yahoo
 
 st.set_page_config(
-    page_title="BolsaIA V32 | Inteligência de Mercado",
+    page_title="BolsaIA V33 | Inteligência de Mercado",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -106,7 +107,7 @@ div[data-testid="stMetric"] { background:rgba(13,24,42,.82); border:1px solid rg
   <div class="brand-row">
     <img class="brand-logo" src="data:image/png;base64,LOGO_B64" />
     <div>
-      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V32</span></h1>
+      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V33</span></h1>
       <div class="tagline">Inteligência de mercado para análise técnica, radar e gestão de risco.</div>
       <div class="mini"><span class="chip">⚡ Scanner inteligente</span><span class="chip">📊 Análise técnica</span><span class="chip green">🛡️ Carteira simulada</span></div>
     </div>
@@ -180,7 +181,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 st.caption("Ferramenta educacional. Indicadores, scores e cenários são hipotéticos e não constituem recomendação de investimento.")
-st.caption("🧭 V32 · Painel de demonstração · Preços dependem da fonte configurada · Nenhuma ordem real é enviada")
+st.caption("🧭 V33 · Painel de demonstração · Preços dependem da fonte configurada · Nenhuma ordem real é enviada")
 
 # V15: status operacional, qualidade do dado e horário da última atualização.
 def _status_mercado():
@@ -224,7 +225,7 @@ if st.session_state.pagina == "⚡ Scanner":
     st.caption("Escolha os ativos abaixo. O score é técnico e educacional; ele não é uma promessa de retorno.")
 elif st.session_state.pagina == "📊 Análise":
     st.markdown("<div class='section'>📊 Análise técnica</div>", unsafe_allow_html=True)
-    st.caption("Use o menu de ativos e os indicadores para entender cada cenário.")
+    st.caption("Escolha qualquer ação ou FII cadastrado para abrir uma análise completa. O carregamento é feito sob demanda para evitar baixar o universo inteiro de uma vez.")
 
 try:
     secrets = st.secrets
@@ -633,7 +634,7 @@ def painel():
     )
 
     csv_scanner = tabela.to_csv(index=False).encode("utf-8")
-    st.download_button("⬇️ Exportar scanner CSV", csv_scanner, file_name="bolsaia_scanner_v32.csv", mime="text/csv", key="export_scanner_v27")
+    st.download_button("⬇️ Exportar scanner CSV", csv_scanner, file_name="bolsaia_scanner_v33.csv", mime="text/csv", key="export_scanner_v27")
 
     # V13: resumo de risco do scanner.
     st.markdown('<div class="section">🛡️ Gestão de risco por ativo</div>', unsafe_allow_html=True)
@@ -663,7 +664,7 @@ def painel():
 
     # V17: snapshot completo para auditoria da sessão.
     csv_snapshot = tabela.to_csv(index=False).encode("utf-8")
-    st.download_button("⬇️ Exportar snapshot completo CSV", csv_snapshot, file_name="bolsaia_snapshot_v32.csv", mime="text/csv", key="export_snapshot_v27")
+    st.download_button("⬇️ Exportar snapshot completo CSV", csv_snapshot, file_name="bolsaia_snapshot_v33.csv", mime="text/csv", key="export_snapshot_v27")
 
     # Radar V9: ranking visual das melhores pontuações entre os ativos monitorados.
     st.markdown('<div class="section">🏆 Radar de Oportunidades</div>', unsafe_allow_html=True)
@@ -797,14 +798,26 @@ def painel():
             st.caption("A evolução é registrada somente durante esta sessão do app; ela não representa histórico de rentabilidade real.")
 
             csv_carteira = carteira_df.to_csv(index=False).encode("utf-8")
-            st.download_button("⬇️ Exportar carteira CSV", csv_carteira, file_name="bolsaia_carteira_v32.csv", mime="text/csv")
+            st.download_button("⬇️ Exportar carteira CSV", csv_carteira, file_name="bolsaia_carteira_v33.csv", mime="text/csv")
     else:
         st.info("Nenhuma posição simulada cadastrada.")
 
-    disponiveis = [x for x in selecionados if x in detalhes]
-    if disponiveis:
-        ativo = st.selectbox("Ver análise detalhada", disponiveis)
-        df, ultima, pontos, sinal, motivos, preco, candle_leitura, candle_padroes = detalhes[ativo]
+    # V33: análise detalhada sob demanda de TODO o universo cadastrado.
+    # O app não precisa baixar todos os ativos ao mesmo tempo: o usuário escolhe um
+    # ativo/FII e os dados são carregados somente para aquele ativo.
+    universo_analise = list(dict.fromkeys(ativos))
+    if universo_analise:
+        ativo = st.selectbox("🔎 Escolha qualquer ação ou FII para análise completa", universo_analise, key="analise_ativo_v33")
+        if ativo in detalhes:
+            df, ultima, pontos, sinal, motivos, preco, candle_leitura, candle_padroes = detalhes[ativo]
+        else:
+            try:
+                df, ultima, pontos, sinal, motivos, candle_leitura, candle_padroes = analisar_ativo(ativo)
+                preco = float(ultima["Close"])
+                detalhes[ativo] = (df, ultima, pontos, sinal, motivos, preco, candle_leitura, candle_padroes)
+            except Exception as e:
+                st.error(f"Não foi possível carregar a análise de {ativo}: {e}")
+                st.stop()
         plano = calcular_plano(ultima, preco)
         try:
             div = dividendos_atualizados(ativo)
@@ -906,7 +919,47 @@ def painel():
         perda_max = qtd_final_det * perda_unit
         st.caption(f"Se o stop técnico fosse atingido, a perda simulada nessa quantidade seria de aproximadamente R$ {perda_max:,.2f}. O cálculo é hipotético e não considera custos, impostos, slippage ou gaps.".replace(",", "X").replace(".", ",").replace("X", "."))
 
-        st.markdown("### 📈 Gráfico profissional V32")
+        st.markdown("### 💰 Calculadora de objetivo de lucro")
+        st.caption("Descubra, em uma simulação, quantas ações/cotas seriam necessárias para atingir um valor de lucro informado. O cálculo usa o preço observado e um preço-alvo técnico; não representa promessa de retorno.")
+        calc1, calc2, calc3 = st.columns(3)
+        with calc1:
+            objetivo_lucro = st.number_input("🎯 Quero buscar um lucro de (R$)", min_value=1.0, value=500.0, step=50.0, key=f"objetivo_lucro_v33_{ativo}")
+        with calc2:
+            preco_alvo_sim = st.number_input("Preço-alvo simulado (R$)", min_value=0.01, value=max(float(plano["alvo"]), float(preco)+0.01), step=0.10, key=f"alvo_calc_v33_{ativo}")
+        with calc3:
+            unidades_orcamento = int(capital_risco / preco) if preco else 0
+            st.metric("Unidades pelo capital definido", f"{unidades_orcamento}")
+
+        ganho_unit = max(float(preco_alvo_sim) - float(preco), 0.0)
+        if ganho_unit <= 0:
+            st.warning("⚠️ O preço-alvo precisa ser maior que o preço observado para calcular um lucro positivo por unidade.")
+        else:
+            qtd_objetivo = int(math.ceil(float(objetivo_lucro) / ganho_unit))
+            capital_objetivo = qtd_objetivo * float(preco)
+            lucro_simulado = qtd_objetivo * ganho_unit
+            cc1, cc2, cc3, cc4 = st.columns(4)
+            cc1.metric("Preço observado", f"R$ {float(preco):.2f}")
+            cc2.metric("Ganho por unidade", f"R$ {ganho_unit:.2f}")
+            cc3.metric("Quantidade necessária", f"{qtd_objetivo:,}".replace(",", "."))
+            cc4.metric("Capital estimado", f"R$ {capital_objetivo:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+            st.success(f"💡 Para buscar **R$ {objetivo_lucro:,.2f}** de lucro, nesse cenário seriam necessárias aproximadamente **{qtd_objetivo:,} unidades**, compradas a R$ {float(preco):,.2f}, com lucro bruto simulado de **R$ {lucro_simulado:,.2f}** se o preço chegasse a R$ {float(preco_alvo_sim):,.2f}.".replace(",", "X").replace(".", ",").replace("X", "."))
+            if qtd_objetivo > unidades_orcamento and unidades_orcamento > 0:
+                st.info(f"📌 Com o capital de R$ {capital_risco:,.2f}, caberiam aproximadamente {unidades_orcamento:,} unidades nesse preço. Isso é apenas uma comparação de orçamento, não uma sugestão de investimento.".replace(",", "X").replace(".", ",").replace("X", "."))
+
+        # V33: meta de renda por dividendos, usando somente o histórico efetivamente registrado.
+        div_obj = div.get("dividendos_12m")
+        if div_obj is not None and float(div_obj) > 0:
+            st.markdown("### 🪙 Quantas unidades para uma meta de dividendos?")
+            meta_div = st.number_input("Meta de dividendos no período de 12 meses (R$)", min_value=1.0, value=500.0, step=50.0, key=f"meta_div_v33_{ativo}")
+            qtd_div_meta = int(math.ceil(meta_div / float(div_obj)))
+            capital_div_meta = qtd_div_meta * float(preco)
+            dc1, dc2, dc3 = st.columns(3)
+            dc1.metric("Dividendos 12m por unidade", f"R$ {float(div_obj):.4f}")
+            dc2.metric("Quantidade estimada", f"{qtd_div_meta:,}".replace(",", "."))
+            dc3.metric("Capital ao preço observado", f"R$ {capital_div_meta:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+            st.caption("⚠️ Essa conta repete o valor histórico de dividendos dos últimos 12 meses apenas como simulação. Pagamentos futuros, valores e datas não são garantidos.")
+
+        st.markdown("### 📈 Gráfico profissional V33")
         try:
             import plotly.graph_objects as go
             from plotly.subplots import make_subplots
@@ -929,7 +982,7 @@ def painel():
             fig.update_yaxes(title_text="Preço (R$)", row=1, col=1)
             fig.update_yaxes(title_text="Volume", row=2, col=1)
             fig.update_xaxes(title_text="Tempo", row=2, col=1)
-            st.plotly_chart(fig, use_container_width=True, key=f"candles_v32_{ativo}")
+            st.plotly_chart(fig, use_container_width=True, key=f"candles_v33_{ativo}")
 
             st.markdown("### 🎛️ Leitura rápida do gráfico")
             g1, g2, g3, g4 = st.columns(4)
@@ -961,7 +1014,7 @@ def painel():
         st.caption("Fallback: Yahoo Finance. Ele não deve ser tratado como feed profissional em tempo real.")
 
 
-st.markdown("<div class='footer'>BolsaIA V32 · Inteligência de Mercado · Demonstração educacional · Dados dependem da fonte configurada</div>", unsafe_allow_html=True)
+st.markdown("<div class='footer'>BolsaIA V33 · Inteligência de Mercado · Demonstração educacional · Dados dependem da fonte configurada</div>", unsafe_allow_html=True)
 
 if hasattr(st, "fragment"):
     @st.fragment(run_every="5s")
