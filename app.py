@@ -12,13 +12,13 @@ from analisador import analisar, analisar_candles, calcular_plano
 from dividendos import obter_dividendos_yahoo
 
 st.set_page_config(
-    page_title="BolsaIA V23 | Inteligência de Mercado",
+    page_title="BolsaIA V24 | Inteligência de Mercado",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# V23 — identidade visual premium baseada na nova marca BolsaIA; foco em apresentação comercial.
+# V24 — identidade visual premium baseada na nova marca BolsaIA; foco em apresentação comercial.
 _logo_path = Path(__file__).with_name("logo.png")
 _logo_b64 = base64.b64encode(_logo_path.read_bytes()).decode("ascii") if _logo_path.exists() else ""
 _hero_html = """
@@ -69,7 +69,7 @@ _hero_html = """
 div[data-testid="stMetric"] { background:rgba(13,24,42,.82); border:1px solid rgba(96,170,255,.11); border-radius:14px; padding:.7rem .8rem; }
 [data-testid="stExpander"] { background:rgba(13,24,42,.68); border:1px solid rgba(96,170,255,.10); border-radius:14px; }
 @media (max-width:700px) { .block-container { padding:.45rem .65rem 2rem; } .hero { padding:1rem; border-radius:17px; } .brand-logo { width:68px; height:68px; border-radius:14px; } .hero h1 { font-size:1.65rem; } .hero .tagline { font-size:.88rem; } .section { font-size:1rem; } }
-</style>
+
 .client-strip { display:flex; justify-content:space-between; gap:.7rem; align-items:center; flex-wrap:wrap; margin:.75rem 0 1rem; padding:.7rem .9rem; border-radius:14px; background:rgba(13,24,42,.72); border:1px solid rgba(96,170,255,.11); color:#a9bbd3; font-size:.82rem; }
 .client-strip strong { color:#f8fafc; }
 .trust-row { display:grid; grid-template-columns:repeat(3,1fr); gap:.6rem; margin:.8rem 0 1.1rem; }
@@ -78,12 +78,13 @@ div[data-testid="stMetric"] { background:rgba(13,24,42,.82); border:1px solid rg
 .trust-item span { color:#8fa6c5; font-size:.72rem; }
 .footer { margin-top:1.8rem; padding:1rem 0 .2rem; border-top:1px solid rgba(255,255,255,.08); color:#71839b; font-size:.74rem; text-align:center; }
 @media (max-width:700px) { .trust-row { grid-template-columns:1fr; } }
+</style>
 
 <div class="hero">
   <div class="brand-row">
     <img class="brand-logo" src="data:image/png;base64,LOGO_B64" />
     <div>
-      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V23</span></h1>
+      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V24</span></h1>
       <div class="tagline">Inteligência de mercado para análise técnica, radar e gestão de risco.</div>
       <div class="mini"><span class="chip">⚡ Scanner inteligente</span><span class="chip">📊 Análise técnica</span><span class="chip green">🛡️ Carteira simulada</span></div>
     </div>
@@ -101,7 +102,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 st.caption("Ferramenta educacional. Indicadores, scores e cenários são hipotéticos e não constituem recomendação de investimento.")
-st.caption("🧭 V23 · Painel de demonstração · Dados dependem da fonte configurada · Nenhuma ordem real é enviada")
+st.caption("🧭 V24 · Painel de demonstração · Dados dependem da fonte configurada · Nenhuma ordem real é enviada")
 
 # V15: status operacional, qualidade do dado e horário da última atualização.
 def _status_mercado():
@@ -338,7 +339,7 @@ def painel():
     with e4:
         st.markdown(f'<div class="exec-card"><div class="exec-label">Dados frescos</div><div class="exec-value">{dados_frescos}/{total_monitorados}</div><div class="muted">idade ≤ 2 min</div></div>', unsafe_allow_html=True)
     st.caption("Visão executiva resumida para leitura rápida. Os indicadores são técnicos e educacionais; não representam probabilidade de retorno.")
-    # V23: camada comercial de leitura rápida, sem alterar os cálculos do scanner.
+    # V24: camada comercial de leitura rápida, sem alterar os cálculos do scanner.
     if not valid_scores.empty:
         top_row = valid_scores.sort_values(["Score", "R/R"], ascending=[False, False]).iloc[0]
         top_ativo = str(top_row["Ativo"])
@@ -350,7 +351,7 @@ def painel():
         status_top = str(top_row["Status dado"])
         html = f"""
 <div class="v22-hero">
-  <div class="v22-kicker">🎯 Destaque da sessão · V23</div>
+  <div class="v22-kicker">🎯 Destaque da sessão · V24</div>
   <div class="v22-title">{top_ativo} · Score {top_score}/100 · {top_sinal}</div>
   <div class="v22-sub">Leitura executiva baseada nos mesmos indicadores técnicos do scanner. Use os detalhes abaixo para entender o cenário.</div>
   <div class="v22-grid">
@@ -403,7 +404,7 @@ def painel():
     )
 
     csv_scanner = tabela.to_csv(index=False).encode("utf-8")
-    st.download_button("⬇️ Exportar scanner CSV", csv_scanner, file_name="bolsaia_scanner_v23.csv", mime="text/csv", key="export_scanner_v22")
+    st.download_button("⬇️ Exportar scanner CSV", csv_scanner, file_name="bolsaia_scanner_v24.csv", mime="text/csv", key="export_scanner_v22")
 
     # V13: resumo de risco do scanner.
     st.markdown('<div class="section">🛡️ Gestão de risco por ativo</div>', unsafe_allow_html=True)
@@ -433,7 +434,7 @@ def painel():
 
     # V17: snapshot completo para auditoria da sessão.
     csv_snapshot = tabela.to_csv(index=False).encode("utf-8")
-    st.download_button("⬇️ Exportar snapshot completo CSV", csv_snapshot, file_name="bolsaia_snapshot_v23.csv", mime="text/csv", key="export_snapshot_v22")
+    st.download_button("⬇️ Exportar snapshot completo CSV", csv_snapshot, file_name="bolsaia_snapshot_v24.csv", mime="text/csv", key="export_snapshot_v22")
 
     # Radar V9: ranking visual das melhores pontuações entre os ativos monitorados.
     st.markdown('<div class="section">🏆 Radar de Oportunidades</div>', unsafe_allow_html=True)
@@ -567,7 +568,7 @@ def painel():
             st.caption("A evolução é registrada somente durante esta sessão do app; ela não representa histórico de rentabilidade real.")
 
             csv_carteira = carteira_df.to_csv(index=False).encode("utf-8")
-            st.download_button("⬇️ Exportar carteira CSV", csv_carteira, file_name="bolsaia_carteira_v23.csv", mime="text/csv")
+            st.download_button("⬇️ Exportar carteira CSV", csv_carteira, file_name="bolsaia_carteira_v24.csv", mime="text/csv")
     else:
         st.info("Nenhuma posição simulada cadastrada.")
 
@@ -712,7 +713,7 @@ def painel():
         st.caption("Fallback: Yahoo Finance. Ele não deve ser tratado como feed profissional em tempo real.")
 
 
-st.markdown("<div class='footer'>BolsaIA V23 · Inteligência de Mercado · Demonstração educacional · Dados dependem da fonte configurada</div>", unsafe_allow_html=True)
+st.markdown("<div class='footer'>BolsaIA V24 · Inteligência de Mercado · Demonstração educacional · Dados dependem da fonte configurada</div>", unsafe_allow_html=True)
 
 if hasattr(st, "fragment"):
     @st.fragment(run_every="5s")
