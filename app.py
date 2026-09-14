@@ -13,7 +13,7 @@ from analisador import analisar, analisar_candles, calcular_plano
 from dividendos import obter_dividendos_yahoo
 
 st.set_page_config(
-    page_title="BolsaIA V33 | Inteligência de Mercado",
+    page_title="BolsaIA V34 | Inteligência de Mercado",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -107,7 +107,7 @@ div[data-testid="stMetric"] { background:rgba(13,24,42,.82); border:1px solid rg
   <div class="brand-row">
     <img class="brand-logo" src="data:image/png;base64,LOGO_B64" />
     <div>
-      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V33</span></h1>
+      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V34</span></h1>
       <div class="tagline">Inteligência de mercado para análise técnica, radar e gestão de risco.</div>
       <div class="mini"><span class="chip">⚡ Scanner inteligente</span><span class="chip">📊 Análise técnica</span><span class="chip green">🛡️ Carteira simulada</span></div>
     </div>
@@ -181,7 +181,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 st.caption("Ferramenta educacional. Indicadores, scores e cenários são hipotéticos e não constituem recomendação de investimento.")
-st.caption("🧭 V33 · Painel de demonstração · Preços dependem da fonte configurada · Nenhuma ordem real é enviada")
+st.caption("🧭 V34 · Painel de demonstração · Preços dependem da fonte configurada · Nenhuma ordem real é enviada")
 
 # V15: status operacional, qualidade do dado e horário da última atualização.
 def _status_mercado():
@@ -634,7 +634,7 @@ def painel():
     )
 
     csv_scanner = tabela.to_csv(index=False).encode("utf-8")
-    st.download_button("⬇️ Exportar scanner CSV", csv_scanner, file_name="bolsaia_scanner_v33.csv", mime="text/csv", key="export_scanner_v27")
+    st.download_button("⬇️ Exportar scanner CSV", csv_scanner, file_name="bolsaia_scanner_v34.csv", mime="text/csv", key="export_scanner_v27")
 
     # V13: resumo de risco do scanner.
     st.markdown('<div class="section">🛡️ Gestão de risco por ativo</div>', unsafe_allow_html=True)
@@ -664,7 +664,7 @@ def painel():
 
     # V17: snapshot completo para auditoria da sessão.
     csv_snapshot = tabela.to_csv(index=False).encode("utf-8")
-    st.download_button("⬇️ Exportar snapshot completo CSV", csv_snapshot, file_name="bolsaia_snapshot_v33.csv", mime="text/csv", key="export_snapshot_v27")
+    st.download_button("⬇️ Exportar snapshot completo CSV", csv_snapshot, file_name="bolsaia_snapshot_v34.csv", mime="text/csv", key="export_snapshot_v27")
 
     # Radar V9: ranking visual das melhores pontuações entre os ativos monitorados.
     st.markdown('<div class="section">🏆 Radar de Oportunidades</div>', unsafe_allow_html=True)
@@ -798,11 +798,57 @@ def painel():
             st.caption("A evolução é registrada somente durante esta sessão do app; ela não representa histórico de rentabilidade real.")
 
             csv_carteira = carteira_df.to_csv(index=False).encode("utf-8")
-            st.download_button("⬇️ Exportar carteira CSV", csv_carteira, file_name="bolsaia_carteira_v33.csv", mime="text/csv")
+            st.download_button("⬇️ Exportar carteira CSV", csv_carteira, file_name="bolsaia_carteira_v34.csv", mime="text/csv")
     else:
         st.info("Nenhuma posição simulada cadastrada.")
 
-    # V33: análise detalhada sob demanda de TODO o universo cadastrado.
+    # V34: carteira personalizada — simulação por orçamento, ativos e pesos.
+    st.markdown("### 💼 Carteira personalizada (simulação)")
+    st.caption("Monte uma carteira hipotética com seu orçamento. A BolsaIA calcula quantas unidades cabem, valor aplicado, saldo e concentração. Não é recomendação de investimento.")
+    orc = st.number_input("💰 Quanto você pretende simular? (R$)", min_value=100.0, value=5000.0, step=500.0, key="orcamento_v34")
+    ativos_carteira = st.multiselect("🔎 Escolha os ativos", universo_analise if 'universo_analise' in locals() else ativos, default=(universo_analise if 'universo_analise' in locals() else ativos)[:3], key="ativos_carteira_v34")
+    if ativos_carteira:
+        pesos = {}
+        cols = st.columns(min(3, len(ativos_carteira)))
+        for i, ticker in enumerate(ativos_carteira):
+            with cols[i % len(cols)]:
+                pesos[ticker] = st.number_input(f"Peso {ticker} (%)", min_value=0.0, max_value=100.0, value=round(100/len(ativos_carteira),1), step=5.0, key=f"peso_v34_{ticker}")
+        soma = sum(pesos.values())
+        if soma <= 0:
+            st.error("Defina pelo menos um peso maior que zero.")
+        else:
+            linhas=[]
+            for ticker in ativos_carteira:
+                try:
+                    if ticker in detalhes:
+                        _, ult, *_rest = detalhes[ticker]
+                        preco_t = float(ult["Close"])
+                    else:
+                        _, ult, *_rest = analisar_ativo(ticker)
+                        preco_t = float(ult["Close"])
+                    peso_norm = pesos[ticker] / soma
+                    valor_alvo = orc * peso_norm
+                    qtd = int(valor_alvo // preco_t) if preco_t > 0 else 0
+                    aplicado = qtd * preco_t
+                    linhas.append({"Ativo":ticker,"Peso normalizado":peso_norm*100,"Preço":preco_t,"Qtd.":qtd,"Aplicado":aplicado,"Saldo não aplicado":max(0.0,valor_alvo-aplicado)})
+                except Exception as e:
+                    st.warning(f"Não foi possível calcular {ticker}: {e}")
+            if linhas:
+                cart = pd.DataFrame(linhas)
+                total_ap = float(cart["Aplicado"].sum())
+                saldo = float(orc-total_ap)
+                c1,c2,c3,c4=st.columns(4)
+                c1.metric("Orçamento", f"R$ {orc:,.2f}".replace(",","X").replace(".",",").replace("X","."))
+                c2.metric("Aplicado", f"R$ {total_ap:,.2f}".replace(",","X").replace(".",",").replace("X","."))
+                c3.metric("Saldo", f"R$ {saldo:,.2f}".replace(",","X").replace(".",",").replace("X","."))
+                c4.metric("Ativos", f"{len(cart)}")
+                ex=cart.copy(); ex["Peso normalizado"]=ex["Peso normalizado"].map(lambda x:f"{x:.1f}%"); ex["Preço"]=ex["Preço"].map(lambda x:f"R$ {x:.2f}"); ex["Aplicado"]=ex["Aplicado"].map(lambda x:f"R$ {x:,.2f}".replace(",","X").replace(".",",").replace("X",".")); ex["Saldo não aplicado"]=ex["Saldo não aplicado"].map(lambda x:f"R$ {x:,.2f}".replace(",","X").replace(".",",").replace("X","."))
+                st.dataframe(ex, use_container_width=True, hide_index=True)
+                if soma != 100:
+                    st.info(f"ℹ️ Os pesos informados somam {soma:.1f}%. A BolsaIA normalizou proporcionalmente os pesos para montar a simulação.")
+                st.caption("Quantidade é arredondada para baixo para não ultrapassar o orçamento de cada posição. Custos, impostos, liquidez e variações futuras não estão incluídos.")
+
+    # V34: análise detalhada sob demanda de TODO o universo cadastrado.
     # O app não precisa baixar todos os ativos ao mesmo tempo: o usuário escolhe um
     # ativo/FII e os dados são carregados somente para aquele ativo.
     universo_analise = list(dict.fromkeys(ativos))
@@ -923,9 +969,9 @@ def painel():
         st.caption("Descubra, em uma simulação, quantas ações/cotas seriam necessárias para atingir um valor de lucro informado. O cálculo usa o preço observado e um preço-alvo técnico; não representa promessa de retorno.")
         calc1, calc2, calc3 = st.columns(3)
         with calc1:
-            objetivo_lucro = st.number_input("🎯 Quero buscar um lucro de (R$)", min_value=1.0, value=500.0, step=50.0, key=f"objetivo_lucro_v33_{ativo}")
+            objetivo_lucro = st.number_input("🎯 Quero buscar um lucro de (R$)", min_value=1.0, value=500.0, step=50.0, key=f"objetivo_lucro_v34_{ativo}")
         with calc2:
-            preco_alvo_sim = st.number_input("Preço-alvo simulado (R$)", min_value=0.01, value=max(float(plano["alvo"]), float(preco)+0.01), step=0.10, key=f"alvo_calc_v33_{ativo}")
+            preco_alvo_sim = st.number_input("Preço-alvo simulado (R$)", min_value=0.01, value=max(float(plano["alvo"]), float(preco)+0.01), step=0.10, key=f"alvo_calc_v34_{ativo}")
         with calc3:
             unidades_orcamento = int(capital_risco / preco) if preco else 0
             st.metric("Unidades pelo capital definido", f"{unidades_orcamento}")
@@ -946,11 +992,11 @@ def painel():
             if qtd_objetivo > unidades_orcamento and unidades_orcamento > 0:
                 st.info(f"📌 Com o capital de R$ {capital_risco:,.2f}, caberiam aproximadamente {unidades_orcamento:,} unidades nesse preço. Isso é apenas uma comparação de orçamento, não uma sugestão de investimento.".replace(",", "X").replace(".", ",").replace("X", "."))
 
-        # V33: meta de renda por dividendos, usando somente o histórico efetivamente registrado.
+        # V34: meta de renda por dividendos, usando somente o histórico efetivamente registrado.
         div_obj = div.get("dividendos_12m")
         if div_obj is not None and float(div_obj) > 0:
             st.markdown("### 🪙 Quantas unidades para uma meta de dividendos?")
-            meta_div = st.number_input("Meta de dividendos no período de 12 meses (R$)", min_value=1.0, value=500.0, step=50.0, key=f"meta_div_v33_{ativo}")
+            meta_div = st.number_input("Meta de dividendos no período de 12 meses (R$)", min_value=1.0, value=500.0, step=50.0, key=f"meta_div_v34_{ativo}")
             qtd_div_meta = int(math.ceil(meta_div / float(div_obj)))
             capital_div_meta = qtd_div_meta * float(preco)
             dc1, dc2, dc3 = st.columns(3)
@@ -982,7 +1028,7 @@ def painel():
             fig.update_yaxes(title_text="Preço (R$)", row=1, col=1)
             fig.update_yaxes(title_text="Volume", row=2, col=1)
             fig.update_xaxes(title_text="Tempo", row=2, col=1)
-            st.plotly_chart(fig, use_container_width=True, key=f"candles_v33_{ativo}")
+            st.plotly_chart(fig, use_container_width=True, key=f"candles_v34_{ativo}")
 
             st.markdown("### 🎛️ Leitura rápida do gráfico")
             g1, g2, g3, g4 = st.columns(4)
@@ -1014,7 +1060,7 @@ def painel():
         st.caption("Fallback: Yahoo Finance. Ele não deve ser tratado como feed profissional em tempo real.")
 
 
-st.markdown("<div class='footer'>BolsaIA V33 · Inteligência de Mercado · Demonstração educacional · Dados dependem da fonte configurada</div>", unsafe_allow_html=True)
+st.markdown("<div class='footer'>BolsaIA V34 · Inteligência de Mercado · Demonstração educacional · Dados dependem da fonte configurada</div>", unsafe_allow_html=True)
 
 if hasattr(st, "fragment"):
     @st.fragment(run_every="5s")
