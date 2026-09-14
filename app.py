@@ -9,11 +9,11 @@ from indicadores import calcular_indicadores
 from analisador import analisar, analisar_candles, calcular_plano
 from dividendos import obter_dividendos_yahoo
 
-st.set_page_config(page_title="BolsaIA v14", page_icon="🚀", layout="wide")
-st.title("🚀 BolsaIA v14 — Radar + Gestão de Risco")
+st.set_page_config(page_title="BolsaIA v15", page_icon="🚀", layout="wide")
+st.title("🚀 BolsaIA v15 — Radar + Gestão de Risco")
 st.caption("Motor educacional de análise técnica + acompanhamento de carteira simulada. Não é recomendação de investimento.")
 
-# V11: status operacional e horário da última atualização do painel.
+# V15: status operacional, qualidade do dado e horário da última atualização.
 def _status_mercado():
     agora = pd.Timestamp.now(tz="America/Sao_Paulo")
     abre = agora.replace(hour=10, minute=0, second=0, microsecond=0)
@@ -73,6 +73,29 @@ def carregar_ativo(ticker, intervalo):
     marker = "btg" if usar_btg else "yahoo"
     return _carregar_ativo_cache(ticker, intervalo, usar_btg, marker)
 
+
+def _idade_dado_minutos(index):
+    try:
+        if index is None or len(index) == 0:
+            return None
+        ultimo = pd.Timestamp(index[-1])
+        if ultimo.tzinfo is None:
+            ultimo = ultimo.tz_localize("America/Sao_Paulo")
+        else:
+            ultimo = ultimo.tz_convert("America/Sao_Paulo")
+        agora = pd.Timestamp.now(tz="America/Sao_Paulo")
+        return max(0.0, (agora - ultimo).total_seconds() / 60.0)
+    except Exception:
+        return None
+
+def _status_dado(idade_min):
+    if idade_min is None:
+        return "N/D"
+    if idade_min <= 2:
+        return "🟢 fresco"
+    if idade_min <= 10:
+        return "🟡 recente"
+    return "🔴 atrasado"
 
 def analisar_ativo(ticker):
     df = calcular_indicadores(carregar_ativo(ticker, intervalo))
@@ -164,12 +187,14 @@ def painel():
                 "Risco/ação": plano_scan["risco_por_acao"],
                 "Dist. stop %": risco_pct,
                 "Qtd. risco": qtd_sugerida,
+                "Idade dado (min)": _idade_dado_minutos(df.index),
+                "Status dado": _status_dado(_idade_dado_minutos(df.index)),
             })
             detalhes[ticker] = (df, ultima, pontos, sinal, motivos, preco, candle_leitura, candle_padroes)
         except Exception as e:
             resultados.append({
                 "Ativo": ticker, "Preço": None, "RSI": None, "MM20": None,
-                "MM50": None, "MM200": None, "ADX": None, "Volume": None, "Score": None, "Sinal": f"ERRO: {e}", "Candle": "ERRO", "R/R": None, "Yield 12m": None, "Variação": None, "ATR %": None, "Stop": None, "Alvo": None, "Risco/ação": None, "Dist. stop %": None, "Qtd. risco": None,
+                "MM50": None, "MM200": None, "ADX": None, "Volume": None, "Score": None, "Sinal": f"ERRO: {e}", "Candle": "ERRO", "R/R": None, "Yield 12m": None, "Variação": None, "ATR %": None, "Stop": None, "Alvo": None, "Risco/ação": None, "Dist. stop %": None, "Qtd. risco": None, "Idade dado (min)": None, "Status dado": "N/D",
             })
 
     tabela = pd.DataFrame(resultados)
@@ -219,8 +244,13 @@ def painel():
             "Risco/ação": st.column_config.NumberColumn(format="R$ %.2f"),
             "Dist. stop %": st.column_config.NumberColumn(format="%.2f%%"),
             "Qtd. risco": st.column_config.NumberColumn(format="%d"),
+            "Idade dado (min)": st.column_config.NumberColumn(format="%.1f"),
+            "Status dado": st.column_config.TextColumn(),
         },
     )
+
+    csv_scanner = tabela.to_csv(index=False).encode("utf-8")
+    st.download_button("⬇️ Exportar scanner CSV", csv_scanner, file_name="bolsaia_scanner_v15.csv", mime="text/csv", key="export_scanner_v15")
 
     # V13: resumo de risco do scanner.
     st.markdown("### 🛡️ Gestão de risco por ativo")
@@ -274,7 +304,7 @@ def painel():
         hist_alertas["hora"] = hist_alertas["hora"].dt.strftime("%d/%m/%Y %H:%M:%S")
         st.dataframe(hist_alertas, use_container_width=True, hide_index=True, column_config={"preco": st.column_config.NumberColumn("Preço", format="R$ %.2f"), "score": st.column_config.NumberColumn("Score", format="%d/100")})
         csv_alertas = hist_alertas.to_csv(index=False).encode("utf-8")
-        st.download_button("⬇️ Exportar alertas CSV", csv_alertas, file_name="bolsaia_alertas_v13.csv", mime="text/csv")
+        st.download_button("⬇️ Exportar alertas CSV", csv_alertas, file_name="bolsaia_alertas_v15.csv", mime="text/csv")
     else:
         st.info("Nenhum alerta registrado nesta sessão ainda. O histórico começa quando um ativo atingir o limiar configurado.")
 
@@ -309,7 +339,18 @@ def painel():
             valor = qtd * atual
             pl = valor - investido
             pl_pct = (pl / investido * 100) if investido else 0
-            posicoes.append({"Ativo": ticker, "Qtd": qtd, "Preço médio": pm, "Preço atual": atual, "Investido": investido, "Valor atual": valor, "P/L": pl, "P/L %": pl_pct})
+            linha0 = linha.iloc[0]
+            stop_pos = float(linha0["Stop"]) if pd.notna(linha0.get("Stop")) else None
+            alvo_pos = float(linha0["Alvo"]) if pd.notna(linha0.get("Alvo")) else None
+            if stop_pos is not None and atual <= stop_pos:
+                status_pos = "🛑 stop atingido"
+            elif alvo_pos is not None and atual >= alvo_pos:
+                status_pos = "🎯 alvo atingido"
+            else:
+                status_pos = "🟢 em acompanhamento"
+            dist_alvo = ((alvo_pos / atual) - 1) * 100 if alvo_pos and atual else None
+            dist_stop = ((atual / stop_pos) - 1) * 100 if stop_pos and atual else None
+            posicoes.append({"Ativo": ticker, "Qtd": qtd, "Preço médio": pm, "Preço atual": atual, "Investido": investido, "Valor atual": valor, "P/L": pl, "P/L %": pl_pct, "Stop": stop_pos, "Alvo": alvo_pos, "Status": status_pos, "Dist. alvo %": dist_alvo, "Dist. stop %": dist_stop})
         if posicoes:
             carteira_df = pd.DataFrame(posicoes)
             total_inv = carteira_df["Investido"].sum()
@@ -322,7 +363,10 @@ def painel():
             st.dataframe(carteira_df, use_container_width=True, hide_index=True, column_config={
                 "Preço médio": st.column_config.NumberColumn(format="R$ %.2f"), "Preço atual": st.column_config.NumberColumn(format="R$ %.2f"),
                 "Investido": st.column_config.NumberColumn(format="R$ %.2f"), "Valor atual": st.column_config.NumberColumn(format="R$ %.2f"),
-                "P/L": st.column_config.NumberColumn(format="R$ %.2f"), "P/L %": st.column_config.NumberColumn(format="%.2f%%")})
+                "P/L": st.column_config.NumberColumn(format="R$ %.2f"), "P/L %": st.column_config.NumberColumn(format="%.2f%%"),
+                "Stop": st.column_config.NumberColumn(format="R$ %.2f"), "Alvo": st.column_config.NumberColumn(format="R$ %.2f"),
+                "Dist. alvo %": st.column_config.NumberColumn(format="%.2f%%"), "Dist. stop %": st.column_config.NumberColumn(format="%.2f%%"),
+                "Status": st.column_config.TextColumn()})
 
             # V12: visão consolidada do patrimônio e evolução da carteira simulada.
             total_pl_pct = (total_pl / total_inv * 100) if total_inv else 0.0
@@ -353,7 +397,7 @@ def painel():
             st.caption("A evolução é registrada somente durante esta sessão do app; ela não representa histórico de rentabilidade real.")
 
             csv_carteira = carteira_df.to_csv(index=False).encode("utf-8")
-            st.download_button("⬇️ Exportar carteira CSV", csv_carteira, file_name="bolsaia_carteira_v14.csv", mime="text/csv")
+            st.download_button("⬇️ Exportar carteira CSV", csv_carteira, file_name="bolsaia_carteira_v15.csv", mime="text/csv")
     else:
         st.info("Nenhuma posição simulada cadastrada.")
 

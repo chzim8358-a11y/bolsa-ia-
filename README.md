@@ -1,22 +1,19 @@
-# BolsaIA v14 — Radar + Gestão de Risco
+# BolsaIA v15 — Radar + Gestão de Risco
 
-Aplicativo educacional em Streamlit para análise técnica, acompanhamento de carteira simulada e dimensionamento hipotético de posição por risco.
+Aplicativo educacional em Streamlit para análise técnica, scanner de oportunidades, acompanhamento de carteira simulada e dimensionamento hipotético de posição por risco.
 
-## Novidades da V14
-- Scanner com atualização automática a cada 5 segundos quando suportado pelo Streamlit.
-- Botão **Atualizar agora** para forçar nova coleta.
-- Cache curto de 4 segundos para reduzir chamadas repetidas ao feed.
-- Período do Yahoo ajustado automaticamente conforme o intervalo, evitando falta de candles para MM20/MM50 em 1h.
-- RSI com suavização de Wilder.
-- MM200 opcional para contexto de tendência em históricos longos.
-- ADX14 + DI+/DI- para identificar força/direção da tendência.
-- Histórico em sessão das mudanças de sinal (ex.: AGUARDAR → COMPRA).
-- Horário da última atualização exibido no scanner.
-- Gestão de risco, stop, alvo, R/R, ATR, candles, dividendos e carteira simulada mantidos.
+## Novidades da V15
+- Indicador de **qualidade/idade dos candles** no scanner (fresco, recente ou atrasado).
+- Coluna de idade do dado em minutos para ajudar a identificar feed desatualizado.
+- **Exportação completa do scanner em CSV**, além dos alertas e da carteira.
+- Carteira simulada agora mostra **stop, alvo, distância até os níveis e status** (acompanhamento, stop ou alvo atingido).
+- Mantidos o ciclo automático de 5 s, botão Atualizar agora, BTG realtime quando configurado e Yahoo como fallback.
+- Mantidos Score técnico, ADX + DI+/DI-, MM200, RSI Wilder, candles, dividendos, radar, histórico de alertas e gestão de risco.
 
 ## Importante
 - O BTG continua sendo o feed principal quando `BTG_API_KEY` está configurada.
 - Yahoo Finance continua como fallback.
 - O aplicativo não envia ordens reais.
 - Score, stop, alvo, quantidade e indicadores são cálculos educacionais/hipotéticos e não garantem resultados.
+- A carteira e o histórico continuam sendo locais à sessão do Streamlit.
 - Dados de mercado podem sofrer atraso, indisponibilidade, diferenças de ajuste ou falhas de conexão.
