@@ -1,18 +1,20 @@
-# BolsaIA V36
+# BolsaIA V38
 
-Painel educacional de inteligência de mercado para análise técnica, scanner, gestão de risco, dividendos e simulações.
+V38 mantém a base funcional da V37 e adiciona uma Central de confiança dos dados, deixando mais claro para o usuário:
 
-## Novidades da V36
-- Modo de leitura **Iniciante** ou **Avançado**.
-- Guia visual para iniciantes dentro do dashboard.
-- Detalhes técnicos adicionais no modo Avançado.
-- Dashboard e exportações identificados como V36.
-- Mantidos Scanner, cotações por fonte configurada, análise detalhada, FIIs, Cemig, calculadoras, carteira simulada e atalhos.
+- qual fonte está sendo usada;
+- se o feed BTG realtime está configurado;
+- quando o ciclo do painel foi executado;
+- que o Yahoo Finance é fallback e pode ter atraso;
+- que nenhum dado ou sinal representa garantia de retorno.
 
 ## Execução
+
 ```bash
 pip install -r requirements.txt
 streamlit run app.py
 ```
 
-A aplicação é demonstrativa/educacional e não envia ordens reais.
+## Realtime B3
+
+Para usar o feed BTG, configure `BTG_API_KEY` nos Secrets do Streamlit Cloud. Sem a chave, o app utiliza Yahoo Finance como fallback.
