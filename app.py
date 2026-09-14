@@ -172,6 +172,36 @@ def painel():
             d4.metric("Último dividendo", "N/D")
         st.caption("🔄 Dividendos: fonte Yahoo Finance, atualização automática a cada 60 s. Preço/cotação continua no ciclo realtime de 5 s.")
 
+        # Simulador simples de renda com dividendos. Usa valores históricos
+        # efetivamente registrados; não é uma previsão de pagamento futuro.
+        st.markdown("### 🧮 Quanto você receberia em dividendos?")
+        qtd_custom = st.number_input("Quantidade de ações", min_value=1, value=100, step=1, key=f"qtd_div_{ativo}")
+        ultimo_por_acao = div.get("ultimo_dividendo")
+        total_12m_por_acao = div.get("dividendos_12m")
+        if ultimo_por_acao is not None:
+            r10 = ultimo_por_acao * 10
+            r100 = ultimo_por_acao * 100
+            r1000 = ultimo_por_acao * 1000
+            rc = ultimo_por_acao * qtd_custom
+            a10 = total_12m_por_acao * 10 if total_12m_por_acao is not None else None
+            a100 = total_12m_por_acao * 100 if total_12m_por_acao is not None else None
+            a1000 = total_12m_por_acao * 1000 if total_12m_por_acao is not None else None
+            ac = total_12m_por_acao * qtd_custom if total_12m_por_acao is not None else None
+            s1, s2, s3 = st.columns(3)
+            s1.metric("10 ações", f"R$ {r10:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
+                      help="Valor aproximado usando o último dividendo registrado por ação.")
+            s2.metric("100 ações", f"R$ {r100:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
+                      help="Valor aproximado usando o último dividendo registrado por ação.")
+            s3.metric("1.000 ações", f"R$ {r1000:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
+                      help="Valor aproximado usando o último dividendo registrado por ação.")
+            st.success(f"💰 Com **{qtd_custom:,} ações**, o último dividendo registrado corresponderia a aproximadamente **R$ {rc:,.2f}**.".replace(",", "X").replace(".", ",").replace("X", "."))
+            if ac is not None:
+                st.info(f"📊 Se o ritmo dos últimos 12 meses se repetisse, **{qtd_custom:,} ações** representariam cerca de **R$ {ac:,.2f}** em dividendos no período.".replace(",", "X").replace(".", ",").replace("X", "."))
+
+        if div.get("ultima_data") is not None:
+            data_ult = pd.Timestamp(div["ultima_data"]).strftime("%d/%m/%Y")
+            st.caption(f"📅 Último registro de dividendo: {data_ult}. O histórico do Yahoo não garante a existência ou o valor de um próximo pagamento.")
+
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("Preço realtime", f"R$ {preco:.2f}")
         c2.metric("RSI", f"{ultima.RSI:.1f}")
