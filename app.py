@@ -13,7 +13,7 @@ from analisador import analisar, analisar_candles, calcular_plano
 from dividendos import obter_dividendos_yahoo
 
 st.set_page_config(
-    page_title="BolsaIA V36 | Inteligência de Mercado",
+    page_title="BolsaIA V37 | Inteligência de Mercado",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -125,7 +125,7 @@ div[data-testid="stMetric"] { background:rgba(13,24,42,.82); border:1px solid rg
   <div class="brand-row">
     <img class="brand-logo" src="data:image/png;base64,LOGO_B64" />
     <div>
-      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V36</span></h1>
+      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V37</span></h1>
       <div class="tagline">Inteligência de mercado para análise técnica, radar e gestão de risco.</div>
       <div class="mini"><span class="chip">⚡ Scanner inteligente</span><span class="chip">📊 Análise técnica</span><span class="chip green">🛡️ Carteira simulada</span></div>
     </div>
@@ -135,29 +135,32 @@ div[data-testid="stMetric"] { background:rgba(13,24,42,.82); border:1px solid rg
 _hero_html = _hero_html.replace("LOGO_B64", _logo_b64)
 st.markdown(_hero_html, unsafe_allow_html=True)
 
-# V28: atalhos de navegação simples e visíveis para iniciantes.
+# V37: navegação interna corrigida. Todos os atalhos trocam de tela dentro do app,
+# sem depender de âncoras HTML e sem obrigar o usuário a sair/recarregar a página.
 if "pagina" not in st.session_state:
     st.session_state.pagina = "🏠 Início"
 if "logado" not in st.session_state:
     st.session_state.logado = False
 
 st.markdown("<div class='section'>🚀 Atalhos</div>", unsafe_allow_html=True)
-st.markdown("""
-<div class="quick-nav">
-  <a class="quick-link" href="#home-top">🏠 Início</a>
-  <a class="quick-link primary" href="#scanner-section">⚡ Scanner</a>
-  <a class="quick-link" href="#analysis-section">📊 Análise</a>
-</div>
-""", unsafe_allow_html=True)
-nav_cols = st.columns(2)
+nav_cols = st.columns(5)
 for col, label, value in [
-    (nav_cols[0], "⚙️ Config", "⚙️ Config"),
-    (nav_cols[1], "👤 Login", "👤 Login"),
+    (nav_cols[0], "🏠 Início", "🏠 Início"),
+    (nav_cols[1], "⚡ Scanner", "⚡ Scanner"),
+    (nav_cols[2], "📊 Análise", "📊 Análise"),
+    (nav_cols[3], "⚙️ Config", "⚙️ Config"),
+    (nav_cols[4], "👤 Login", "👤 Login"),
 ]:
     with col:
         if st.button(label, use_container_width=True, key=f"nav_{value}"):
             st.session_state.pagina = value
             st.rerun()
+
+# Botão de retorno explícito nas telas secundárias (essencial no celular).
+if st.session_state.pagina != "🏠 Início":
+    if st.button("← Voltar ao Início", use_container_width=True, key="nav_back_home_v37"):
+        st.session_state.pagina = "🏠 Início"
+        st.rerun()
 
 if st.session_state.pagina == "👤 Login":
     st.markdown("<div class='section'>👤 Área do usuário</div>", unsafe_allow_html=True)
@@ -199,7 +202,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 st.caption("Ferramenta educacional. Indicadores, scores e cenários são hipotéticos e não constituem recomendação de investimento.")
-st.caption("🧭 V36 · Painel de demonstração · Preços dependem da fonte configurada · Nenhuma ordem real é enviada")
+st.caption("🧭 V37 · Painel de demonstração · Preços dependem da fonte configurada · Nenhuma ordem real é enviada")
 
 # V15: status operacional, qualidade do dado e horário da última atualização.
 def _status_mercado():
@@ -613,7 +616,7 @@ def painel():
     # Não altera o cálculo do Score; apenas transforma os dados já calculados em um resumo visual.
     st.markdown('<div class="section">📊 Dashboard inteligente</div>', unsafe_allow_html=True)
     if modo_leitura == "🧑‍🏫 Iniciante":
-        st.markdown("""<div class="v36-guide"><div class="v36-guide-title">🧭 Seu mapa rápido <span class="v36-badge">V36</span></div><div class="v36-guide-sub">Não precisa decorar indicadores. Comece por estes quatro pontos e só aprofunde quando quiser.</div><div class="v36-checks"><div class="v36-check"><b>1️⃣ Score</b><span>Mostra a força técnica do conjunto de sinais.</span></div><div class="v36-check"><b>2️⃣ Tendência</b><span>Compare preço e médias para entender a direção.</span></div><div class="v36-check"><b>3️⃣ Risco</b><span>Veja stop, distância e risco por unidade.</span></div><div class="v36-check"><b>4️⃣ Dados</b><span>Confira a fonte e a idade antes de interpretar.</span></div></div></div>""", unsafe_allow_html=True)
+        st.markdown("""<div class="v36-guide"><div class="v36-guide-title">🧭 Seu mapa rápido <span class="v36-badge">V37</span></div><div class="v36-guide-sub">Não precisa decorar indicadores. Comece por estes quatro pontos e só aprofunde quando quiser.</div><div class="v36-checks"><div class="v36-check"><b>1️⃣ Score</b><span>Mostra a força técnica do conjunto de sinais.</span></div><div class="v36-check"><b>2️⃣ Tendência</b><span>Compare preço e médias para entender a direção.</span></div><div class="v36-check"><b>3️⃣ Risco</b><span>Veja stop, distância e risco por unidade.</span></div><div class="v36-check"><b>4️⃣ Dados</b><span>Confira a fonte e a idade antes de interpretar.</span></div></div></div>""", unsafe_allow_html=True)
     if not valid_scores.empty:
         media_score_dash = float(valid_scores["Score"].mean())
         melhor_dash = valid_scores.sort_values(["Score", "R/R"], ascending=[False, False]).iloc[0]
@@ -1090,7 +1093,7 @@ def painel():
             dc3.metric("Capital ao preço observado", f"R$ {capital_div_meta:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
             st.caption("⚠️ Essa conta repete o valor histórico de dividendos dos últimos 12 meses apenas como simulação. Pagamentos futuros, valores e datas não são garantidos.")
 
-        st.markdown("### 📈 Gráfico profissional V36")
+        st.markdown("### 📈 Gráfico profissional V37")
         try:
             import plotly.graph_objects as go
             from plotly.subplots import make_subplots
@@ -1154,7 +1157,7 @@ def painel():
         st.caption("Fallback: Yahoo Finance. Ele não deve ser tratado como feed profissional em tempo real.")
 
 
-st.markdown("<div class='footer'>BolsaIA V36 · Inteligência de Mercado · Demonstração educacional · Dados dependem da fonte configurada</div>", unsafe_allow_html=True)
+st.markdown("<div class='footer'>BolsaIA V37 · Inteligência de Mercado · Demonstração educacional · Dados dependem da fonte configurada</div>", unsafe_allow_html=True)
 
 if hasattr(st, "fragment"):
     @st.fragment(run_every="5s")
