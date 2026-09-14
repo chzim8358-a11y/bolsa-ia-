@@ -1,19 +1,20 @@
-# BolsaIA v11 — Radar + Carteira Simulada
+# BolsaIA v12 — Radar + Carteira Simulada
 
-Aplicativo educacional em Streamlit para análise técnica de ativos B3.
+Aplicativo educacional em Streamlit para análise técnica e acompanhamento de carteira simulada de ativos B3.
 
-## Novidades da V11
-- Tudo da V10, com status do mercado B3 e horário de Brasília visíveis no painel.
-- Carteira virtual: quantidade, preço médio, valor atual e P/L simulado.
+## Novidades da V12
+- Tudo da V11.
+- Painel consolidado de capital simulado, valor atual e P/L.
+- Dividendos dos ativos da carteira integrados ao resumo.
+- Resultado combinado de P/L + dividendos históricos de 12 meses.
+- Gráfico da evolução da carteira durante a sessão atual.
 - Exportação da carteira para CSV.
-- Scanner enriquecido com variação do candle e ATR percentual.
 
-## Mantido das versões anteriores
-- Radar/ranking dos ativos monitorados pelo Score técnico.
-- Top 3 oportunidades com Score, sinal, risco/retorno e Dividend Yield de 12 meses.
-- Tabela do scanner com R/R e Yield 12m.
-- Mantém candles, RSI, MACD, médias móveis, plano técnico, stop/alvo e dividendos.
-- BTG continua como feed realtime opcional; Yahoo Finance permanece como fallback.
+## Mantido
+- Radar/ranking, Score técnico, alertas, candles, RSI, MACD, médias, alvo, stop, R/R e dividendos.
+- BTG como feed realtime opcional; Yahoo Finance como fallback.
+
+> Ferramenta educacional e de simulação. Não constitui recomendação de investimento nem envia ordens reais. Dividendos são históricos; o gráfico da carteira é somente da sessão atual.
 
 ## Arquivos
 - `app.py`
@@ -23,8 +24,3 @@ Aplicativo educacional em Streamlit para análise técnica de ativos B3.
 - `dividendos.py`
 - `requirements.txt`
 - `README.md`
-
-> O Score/ranking é uma ferramenta educacional de análise técnica e não garante movimentos futuros nem constitui recomendação de investimento.
-
-- Pacote limpo: a versão distribuída não inclui a pasta `__pycache__` nem arquivos `.pyc`.
-- Atualização automática do painel a cada 5 segundos quando suportada pela versão do Streamlit.

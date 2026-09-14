@@ -10,7 +10,7 @@ from analisador import analisar, analisar_candles, calcular_plano
 from dividendos import obter_dividendos_yahoo
 
 st.set_page_config(page_title="BolsaIA v11", page_icon="🚀", layout="wide")
-st.title("🚀 BolsaIA v11 — Radar + Carteira Simulada")
+st.title("🚀 BolsaIA v12 — Radar + Carteira Simulada")
 st.caption("Motor educacional de análise técnica + acompanhamento de carteira simulada. Não é recomendação de investimento.")
 
 # V11: status operacional e horário da última atualização do painel.
@@ -208,7 +208,7 @@ def painel():
         hist_alertas["hora"] = hist_alertas["hora"].dt.strftime("%d/%m/%Y %H:%M:%S")
         st.dataframe(hist_alertas, use_container_width=True, hide_index=True, column_config={"preco": st.column_config.NumberColumn("Preço", format="R$ %.2f"), "score": st.column_config.NumberColumn("Score", format="%d/100")})
         csv_alertas = hist_alertas.to_csv(index=False).encode("utf-8")
-        st.download_button("⬇️ Exportar alertas CSV", csv_alertas, file_name="bolsaia_alertas_v11.csv", mime="text/csv")
+        st.download_button("⬇️ Exportar alertas CSV", csv_alertas, file_name="bolsaia_alertas_v12.csv", mime="text/csv")
     else:
         st.info("Nenhum alerta registrado nesta sessão ainda. O histórico começa quando um ativo atingir o limiar configurado.")
 
@@ -257,8 +257,37 @@ def painel():
                 "Preço médio": st.column_config.NumberColumn(format="R$ %.2f"), "Preço atual": st.column_config.NumberColumn(format="R$ %.2f"),
                 "Investido": st.column_config.NumberColumn(format="R$ %.2f"), "Valor atual": st.column_config.NumberColumn(format="R$ %.2f"),
                 "P/L": st.column_config.NumberColumn(format="R$ %.2f"), "P/L %": st.column_config.NumberColumn(format="%.2f%%")})
+
+            # V12: visão consolidada do patrimônio e evolução da carteira simulada.
+            total_pl_pct = (total_pl / total_inv * 100) if total_inv else 0.0
+            total_div = 0.0
+            for ticker, pos in st.session_state.carteira.items():
+                try:
+                    div_pos = dividendos_atualizados(ticker)
+                    qtd = int(pos["quantidade"])
+                    total_div += float(div_pos.get("dividendos_12m") or 0) * qtd
+                except Exception:
+                    pass
+            patrimonio_com_div = total_val + total_div
+            resultado_total = patrimonio_com_div - total_inv
+            k4, k5 = st.columns(2)
+            k4.metric("💰 Dividendos 12m estimados", f"R$ {total_div:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+            k5.metric("📊 Resultado + dividendos", f"R$ {resultado_total:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."), f"{(resultado_total / total_inv * 100) if total_inv else 0:.2f}%")
+
+            # Histórico simples da sessão: guarda o valor da carteira para desenhar a evolução.
+            agora_hist = pd.Timestamp.now(tz="America/Sao_Paulo")
+            if "historico_carteira" not in st.session_state:
+                st.session_state.historico_carteira = []
+            if not st.session_state.historico_carteira or (agora_hist - st.session_state.historico_carteira[-1]["hora"]).total_seconds() >= 5:
+                st.session_state.historico_carteira.append({"hora": agora_hist, "valor": total_val, "investido": total_inv})
+            st.session_state.historico_carteira = st.session_state.historico_carteira[-300:]
+            hist_df = pd.DataFrame(st.session_state.historico_carteira).set_index("hora")
+            st.markdown("### 📈 Evolução da carteira (sessão atual)")
+            st.line_chart(hist_df[["valor", "investido"]])
+            st.caption("A evolução é registrada somente durante esta sessão do app; ela não representa histórico de rentabilidade real.")
+
             csv_carteira = carteira_df.to_csv(index=False).encode("utf-8")
-            st.download_button("⬇️ Exportar carteira CSV", csv_carteira, file_name="bolsaia_carteira_v11.csv", mime="text/csv")
+            st.download_button("⬇️ Exportar carteira CSV", csv_carteira, file_name="bolsaia_carteira_v12.csv", mime="text/csv")
     else:
         st.info("Nenhuma posição simulada cadastrada.")
 
