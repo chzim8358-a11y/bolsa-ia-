@@ -1,8 +1,3 @@
-<p align="center">
-  <img src="logo.png" width="220">
-</p>
-
-# 🚀 BolsaIA — Inteligência de Mercado
 # BolsaIA V19 — Dashboard Comercial
 
 Aplicativo educacional em Streamlit para análise técnica, scanner de oportunidades, acompanhamento de carteira simulada e dimensionamento hipotético de posição por risco.
