@@ -9,9 +9,9 @@ from indicadores import calcular_indicadores
 from analisador import analisar, analisar_candles, calcular_plano
 from dividendos import obter_dividendos_yahoo
 
-st.set_page_config(page_title="BolsaIA v9", page_icon="📡", layout="wide")
-st.title("📡 BolsaIA v9 — Radar de Oportunidades B3")
-st.caption("Motor educacional de análise técnica. Não é recomendação de investimento.")
+st.set_page_config(page_title="BolsaIA v10", page_icon="🚀", layout="wide")
+st.title("🚀 BolsaIA v10 — Radar + Carteira Simulada")
+st.caption("Motor educacional de análise técnica + acompanhamento de carteira simulada. Não é recomendação de investimento.")
 
 try:
     secrets = st.secrets
@@ -86,6 +86,8 @@ def dividendos_atualizados(ticker):
 
 
 def painel():
+    if "historico_alertas" not in st.session_state:
+        st.session_state.historico_alertas = []
     if not selecionados:
         st.info("Escolha pelo menos um ativo.")
         return
@@ -121,12 +123,14 @@ def painel():
                 "Candle": candle_leitura,
                 "R/R": plano_scan["risco_retorno"],
                 "Yield 12m": dy_scan,
+                "Variação": ((preco / float(df["Close"].iloc[-2]) - 1) * 100) if len(df) > 1 and float(df["Close"].iloc[-2]) else None,
+                "ATR %": ((float(ultima["ATR14"]) / preco) * 100) if preco and pd.notna(ultima["ATR14"]) else None,
             })
             detalhes[ticker] = (df, ultima, pontos, sinal, motivos, preco, candle_leitura, candle_padroes)
         except Exception as e:
             resultados.append({
                 "Ativo": ticker, "Preço": None, "RSI": None, "MM20": None,
-                "MM50": None, "Volume": None, "Score": None, "Sinal": f"ERRO: {e}", "Candle": "ERRO", "R/R": None, "Yield 12m": None,
+                "MM50": None, "Volume": None, "Score": None, "Sinal": f"ERRO: {e}", "Candle": "ERRO", "R/R": None, "Yield 12m": None, "Variação": None, "ATR %": None,
             })
 
     tabela = pd.DataFrame(resultados)
@@ -151,6 +155,8 @@ def painel():
             "Candle": st.column_config.TextColumn(),
             "R/R": st.column_config.NumberColumn(format="1:%.2f"),
             "Yield 12m": st.column_config.NumberColumn(format="%.2f%%"),
+            "Variação": st.column_config.NumberColumn(format="%.2f%%"),
+            "ATR %": st.column_config.NumberColumn(format="%.2f%%"),
         },
     )
 
@@ -174,6 +180,75 @@ def painel():
     # O ranking usa o mesmo Score técnico; não representa probabilidade de lucro.
 
     st.caption("🏆 O radar ordena os ativos pelo Score técnico e usa o R/R como desempate. O ranking é educacional e não constitui recomendação de investimento.")
+
+    # V10: histórico de alertas para não perder uma oportunidade enquanto o painel atualiza.
+    agora = pd.Timestamp.now(tz="America/Sao_Paulo")
+    for _, r in alertas.iterrows():
+        chave = (r["Ativo"], int(r["Score"]))
+        ultimo = next((x for x in reversed(st.session_state.historico_alertas) if x["chave"] == chave), None)
+        if ultimo is None or (agora - ultimo["hora"]).total_seconds() >= 60:
+            st.session_state.historico_alertas.append({"hora": agora, "ativo": r["Ativo"], "score": int(r["Score"]), "sinal": r["Sinal"], "preco": r["Preço"], "chave": chave})
+    st.session_state.historico_alertas = st.session_state.historico_alertas[-50:]
+
+    st.markdown("### 🔔 Histórico de alertas")
+    if st.session_state.historico_alertas:
+        hist_alertas = pd.DataFrame(st.session_state.historico_alertas)[["hora", "ativo", "score", "sinal", "preco"]].sort_values("hora", ascending=False)
+        hist_alertas["hora"] = hist_alertas["hora"].dt.strftime("%d/%m/%Y %H:%M:%S")
+        st.dataframe(hist_alertas, use_container_width=True, hide_index=True, column_config={"preco": st.column_config.NumberColumn("Preço", format="R$ %.2f"), "score": st.column_config.NumberColumn("Score", format="%d/100")})
+        csv_alertas = hist_alertas.to_csv(index=False).encode("utf-8")
+        st.download_button("⬇️ Exportar alertas CSV", csv_alertas, file_name="bolsaia_alertas_v10.csv", mime="text/csv")
+    else:
+        st.info("Nenhum alerta registrado nesta sessão ainda. O histórico começa quando um ativo atingir o limiar configurado.")
+
+    # V10: carteira virtual, sem envio de ordens e sem conexão com corretora.
+    st.markdown("### 💼 Carteira simulada")
+    st.caption("A carteira é apenas uma simulação local desta sessão. Nenhuma ordem real é enviada.")
+    if "carteira" not in st.session_state:
+        st.session_state.carteira = {}
+    with st.expander("Adicionar/atualizar posição", expanded=False):
+        pc1, pc2, pc3 = st.columns(3)
+        with pc1:
+            ativo_pos = st.selectbox("Ativo", ativos, key="carteira_ativo")
+        with pc2:
+            qtd_pos = st.number_input("Quantidade", min_value=1, value=100, step=1, key="carteira_qtd")
+        preco_atual_pos = float(realtime_prices.get(ativo_pos, tabela.loc[tabela["Ativo"] == ativo_pos, "Preço"].iloc[0])) if not tabela.loc[tabela["Ativo"] == ativo_pos, "Preço"].dropna().empty else 0.0
+        with pc3:
+            preco_medio = st.number_input("Preço médio (R$)", min_value=0.01, value=max(round(preco_atual_pos, 2), 0.01), step=0.01, key="carteira_preco")
+        if st.button("💾 Salvar posição simulada", key="salvar_posicao"):
+            st.session_state.carteira[ativo_pos] = {"quantidade": int(qtd_pos), "preco_medio": float(preco_medio)}
+            st.success(f"Posição simulada de {ativo_pos} salva.")
+
+    if st.session_state.carteira:
+        posicoes = []
+        for ticker, pos in st.session_state.carteira.items():
+            linha = tabela[tabela["Ativo"] == ticker]
+            if linha.empty or pd.isna(linha.iloc[0]["Preço"]):
+                continue
+            atual = float(linha.iloc[0]["Preço"])
+            qtd = int(pos["quantidade"])
+            pm = float(pos["preco_medio"])
+            investido = qtd * pm
+            valor = qtd * atual
+            pl = valor - investido
+            pl_pct = (pl / investido * 100) if investido else 0
+            posicoes.append({"Ativo": ticker, "Qtd": qtd, "Preço médio": pm, "Preço atual": atual, "Investido": investido, "Valor atual": valor, "P/L": pl, "P/L %": pl_pct})
+        if posicoes:
+            carteira_df = pd.DataFrame(posicoes)
+            total_inv = carteira_df["Investido"].sum()
+            total_val = carteira_df["Valor atual"].sum()
+            total_pl = total_val - total_inv
+            k1, k2, k3 = st.columns(3)
+            k1.metric("Capital simulado", f"R$ {total_inv:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+            k2.metric("Valor atual", f"R$ {total_val:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+            k3.metric("P/L simulado", f"R$ {total_pl:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."), f"{(total_pl / total_inv * 100) if total_inv else 0:.2f}%")
+            st.dataframe(carteira_df, use_container_width=True, hide_index=True, column_config={
+                "Preço médio": st.column_config.NumberColumn(format="R$ %.2f"), "Preço atual": st.column_config.NumberColumn(format="R$ %.2f"),
+                "Investido": st.column_config.NumberColumn(format="R$ %.2f"), "Valor atual": st.column_config.NumberColumn(format="R$ %.2f"),
+                "P/L": st.column_config.NumberColumn(format="R$ %.2f"), "P/L %": st.column_config.NumberColumn(format="%.2f%%")})
+            csv_carteira = carteira_df.to_csv(index=False).encode("utf-8")
+            st.download_button("⬇️ Exportar carteira CSV", csv_carteira, file_name="bolsaia_carteira_v10.csv", mime="text/csv")
+    else:
+        st.info("Nenhuma posição simulada cadastrada.")
 
     disponiveis = [x for x in selecionados if x in detalhes]
     if disponiveis:
