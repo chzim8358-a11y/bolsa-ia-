@@ -10,83 +10,55 @@ from analisador import analisar, analisar_candles, calcular_plano
 from dividendos import obter_dividendos_yahoo
 
 st.set_page_config(
-    page_title="BolsaIA V19 | Inteligência de Mercado",
+    page_title="BolsaIA V20 | Inteligência de Mercado",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# V19 — identidade visual, contraste e apresentação para demonstrações/clientes.
+# V20 — interface premium, contraste consistente e apresentação para demonstrações/clientes.
 st.markdown("""
 <style>
-    .stApp { background: linear-gradient(180deg, #f7f9fc 0%, #ffffff 42%); }
-    .block-container { max-width: 1450px; padding-top: 1.2rem; padding-bottom: 3rem; }
-    [data-testid="stSidebar"] { border-right: 1px solid rgba(0,0,0,.08); }
-    .hero {
-        padding: 1.35rem 1.5rem;
-        border: 1px solid rgba(0,0,0,.08);
-        border-radius: 18px;
-        background: linear-gradient(135deg, #ffffff 0%, #eef4ff 100%);
-        box-shadow: 0 8px 28px rgba(20,40,80,.07);
-        margin-bottom: 1rem;
-    }
-    .hero h1 { margin: 0; font-size: 2.15rem; letter-spacing: -.04em; }
-    .hero p { margin: .35rem 0 0; color: #5f6b7a; }
-    .section {
-        font-size: 1.08rem; font-weight: 700; margin-top: 1.15rem;
-        padding: .35rem 0; border-bottom: 1px solid rgba(0,0,0,.08);
-    }
-    .badge {
-        display:inline-block; padding:.25rem .65rem; border-radius:999px;
-        font-size:.78rem; font-weight:700; background:#eaf7ef;
-        border:1px solid #ccebd7; margin-top:.7rem;
-    }
-    .muted { color:#6b7280; font-size:.84rem; }
-    div[data-testid="stMetric"] {
-        background: rgba(255,255,255,.82);
-        border: 1px solid rgba(0,0,0,.07);
-        border-radius: 14px;
-        padding: .65rem .8rem;
-    }
-    .stButton > button, .stDownloadButton > button {
-        border-radius: 10px;
-        font-weight: 650;
-    }
-    .exec-card {
-        border: 1px solid rgba(0,0,0,.08); border-radius: 16px;
-        padding: 1rem 1.05rem; background: rgba(255,255,255,.9);
-        box-shadow: 0 5px 18px rgba(20,40,80,.05);
-    }
-    .exec-label { color:#6b7280; font-size:.78rem; font-weight:650; text-transform:uppercase; letter-spacing:.04em; }
-    .exec-value { font-size:1.55rem; font-weight:800; margin-top:.18rem; }
-    .signal-pill { display:inline-block; padding:.28rem .7rem; border-radius:999px; font-weight:750; font-size:.8rem; background:#eef4ff; border:1px solid #d7e4ff; }
-    .reason { padding:.38rem .6rem; margin:.2rem 0; border-radius:9px; background:#f7f8fa; border:1px solid rgba(0,0,0,.05); color:#172033; }
-    /* V19: contraste explícito para evitar texto branco em fundo claro. */
-    .stApp, .stApp p, .stApp label, .stApp [data-testid="stMarkdownContainer"], .stApp [data-testid="stCaptionContainer"] { color:#172033; }
-    .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6 { color:#101828; }
-    .stApp [data-testid="stMetricLabel"] { color:#667085 !important; }
-    .stApp [data-testid="stMetricValue"] { color:#101828 !important; }
-    .stApp [data-testid="stMetricDelta"] { color:#344054 !important; }
-    .stApp [data-testid="stDataFrame"] { color:#172033; }
-    .stApp input, .stApp textarea { color:#172033 !important; }
-    .stApp [data-baseweb="select"] * { color:#172033 !important; }
-    .stApp [data-baseweb="slider"] { color:#172033; }
-    .stApp .stAlert p { color:inherit !important; }
-    @media (max-width: 700px) {
-        .block-container { padding: .75rem .65rem 2rem; }
-        .hero { padding: 1rem; border-radius: 14px; }
-        .hero h1 { font-size: 1.65rem; }
-        .section { font-size: 1rem; }
-        div[data-testid="stMetric"] { padding: .55rem .6rem; }
-    }
+:root { color-scheme: dark; }
+.stApp { background: radial-gradient(circle at 15% 0%, #16213a 0%, #0b1020 38%, #070b14 100%); }
+.block-container { max-width: 1450px; padding-top: 1.1rem; padding-bottom: 3rem; }
+[data-testid="stSidebar"] { background: #0d1424; border-right: 1px solid rgba(255,255,255,.09); }
+.hero { padding: 1.45rem 1.55rem; border: 1px solid rgba(255,255,255,.10); border-radius: 20px; background: linear-gradient(135deg, rgba(25,38,66,.96), rgba(12,18,32,.96)); box-shadow: 0 14px 40px rgba(0,0,0,.25); margin-bottom: 1rem; }
+.hero h1 { margin: 0; font-size: 2.25rem; letter-spacing: -.045em; color:#f8fafc; }
+.hero p { margin: .4rem 0 0; color: #aab7cc; }
+.section { font-size: 1.08rem; font-weight: 800; margin-top: 1.2rem; padding: .45rem 0; border-bottom: 1px solid rgba(255,255,255,.10); color:#f8fafc; }
+.badge { display:inline-block; padding:.3rem .7rem; border-radius:999px; font-size:.78rem; font-weight:750; background:#102a1d; color:#7ee2a8; border:1px solid #24583a; margin-top:.8rem; }
+.muted { color:#94a3b8; font-size:.84rem; }
+.exec-card { border: 1px solid rgba(255,255,255,.10); border-radius: 16px; padding: 1rem 1.05rem; background: rgba(17,25,43,.86); box-shadow: 0 8px 24px rgba(0,0,0,.18); min-height: 112px; }
+.exec-label { color:#8fa0b8; font-size:.76rem; font-weight:750; text-transform:uppercase; letter-spacing:.05em; }
+.exec-value { color:#f8fafc; font-size:1.6rem; font-weight:850; margin-top:.2rem; }
+.signal-pill { display:inline-block; padding:.3rem .72rem; border-radius:999px; font-weight:800; font-size:.8rem; background:#152744; color:#bcd3ff; border:1px solid #294a80; }
+.reason { padding:.45rem .65rem; margin:.25rem 0; border-radius:9px; background:#111a2b; border:1px solid rgba(255,255,255,.06); color:#d9e2f0; }
+.stApp, .stApp p, .stApp label, .stApp [data-testid="stMarkdownContainer"], .stApp [data-testid="stCaptionContainer"] { color:#dbe4f0; }
+.stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6 { color:#f8fafc; }
+.stApp [data-testid="stMetricLabel"] { color:#9fb0c7 !important; }
+.stApp [data-testid="stMetricValue"] { color:#f8fafc !important; }
+.stApp [data-testid="stMetricDelta"] { color:#b9c7da !important; }
+.stApp input, .stApp textarea { color:#f8fafc !important; background:#111827 !important; }
+.stApp [data-baseweb="select"] * { color:#f8fafc !important; }
+.stApp [data-baseweb="select"] > div { background:#111827 !important; border-color:rgba(255,255,255,.10) !important; }
+.stApp [data-baseweb="slider"] { color:#dbe4f0; }
+.stApp .stAlert p { color:inherit !important; }
+.stApp [data-testid="stDataFrame"] { border:1px solid rgba(255,255,255,.08); border-radius:12px; overflow:hidden; }
+.stButton > button, .stDownloadButton > button { border-radius: 11px; font-weight: 750; border:1px solid rgba(255,255,255,.14); }
+.stButton > button:hover, .stDownloadButton > button:hover { border-color:rgba(255,255,255,.28); }
+div[data-testid="stMetric"] { background: rgba(17,25,43,.78); border: 1px solid rgba(255,255,255,.09); border-radius: 14px; padding: .7rem .8rem; }
+[data-testid="stExpander"] { background:rgba(17,25,43,.68); border:1px solid rgba(255,255,255,.09); border-radius:14px; }
+@media (max-width: 700px) { .block-container { padding:.7rem .65rem 2rem; } .hero { padding:1.05rem; border-radius:15px; } .hero h1 { font-size:1.7rem; } .section { font-size:1rem; } }
 </style>
 <div class="hero">
-    <h1>📈 BolsaIA <span style="font-size:.55em;">V19</span></h1>
+    <h1>📈 BolsaIA <span style="font-size:.55em;">V20</span></h1>
     <p>Inteligência de mercado para análise técnica, radar de oportunidades e gestão de risco.</p>
     <span class="badge">● Modo demonstração · Sem envio de ordens</span>
 </div>
 """, unsafe_allow_html=True)
 st.caption("Ferramenta educacional. Indicadores, scores e cenários são hipotéticos e não constituem recomendação de investimento.")
+st.caption("🧭 V20 · Painel de demonstração · Dados dependem da fonte configurada · Nenhuma ordem real é enviada")
 
 # V15: status operacional, qualidade do dado e horário da última atualização.
 def _status_mercado():
@@ -364,7 +336,7 @@ def painel():
     )
 
     csv_scanner = tabela.to_csv(index=False).encode("utf-8")
-    st.download_button("⬇️ Exportar scanner CSV", csv_scanner, file_name="bolsaia_scanner_v19.csv", mime="text/csv", key="export_scanner_v19")
+    st.download_button("⬇️ Exportar scanner CSV", csv_scanner, file_name="bolsaia_scanner_v20.csv", mime="text/csv", key="export_scanner_v20")
 
     # V13: resumo de risco do scanner.
     st.markdown('<div class="section">🛡️ Gestão de risco por ativo</div>', unsafe_allow_html=True)
@@ -528,7 +500,7 @@ def painel():
             st.caption("A evolução é registrada somente durante esta sessão do app; ela não representa histórico de rentabilidade real.")
 
             csv_carteira = carteira_df.to_csv(index=False).encode("utf-8")
-            st.download_button("⬇️ Exportar carteira CSV", csv_carteira, file_name="bolsaia_carteira_v19.csv", mime="text/csv")
+            st.download_button("⬇️ Exportar carteira CSV", csv_carteira, file_name="bolsaia_carteira_v20.csv", mime="text/csv")
     else:
         st.info("Nenhuma posição simulada cadastrada.")
 
