@@ -12,7 +12,7 @@ from analisador import analisar, analisar_candles, calcular_plano
 from dividendos import obter_dividendos_yahoo
 
 st.set_page_config(
-    page_title="BolsaIA V30 | Inteligência de Mercado",
+    page_title="BolsaIA V31 | Inteligência de Mercado",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -106,7 +106,7 @@ div[data-testid="stMetric"] { background:rgba(13,24,42,.82); border:1px solid rg
   <div class="brand-row">
     <img class="brand-logo" src="data:image/png;base64,LOGO_B64" />
     <div>
-      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V30</span></h1>
+      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V31</span></h1>
       <div class="tagline">Inteligência de mercado para análise técnica, radar e gestão de risco.</div>
       <div class="mini"><span class="chip">⚡ Scanner inteligente</span><span class="chip">📊 Análise técnica</span><span class="chip green">🛡️ Carteira simulada</span></div>
     </div>
@@ -180,7 +180,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 st.caption("Ferramenta educacional. Indicadores, scores e cenários são hipotéticos e não constituem recomendação de investimento.")
-st.caption("🧭 V30 · Painel de demonstração · Preços dependem da fonte configurada · Nenhuma ordem real é enviada")
+st.caption("🧭 V31 · Painel de demonstração · Preços dependem da fonte configurada · Nenhuma ordem real é enviada")
 
 # V15: status operacional, qualidade do dado e horário da última atualização.
 def _status_mercado():
@@ -450,6 +450,42 @@ def painel():
 
     tabela = pd.DataFrame(resultados)
 
+    # V31: ranking inteligente + semáforo + explicação simples do score.
+    def _semaforo_score(score):
+        if pd.isna(score): return ("⚪", "Sem dados")
+        score = float(score)
+        if score >= 75: return ("🟢", "Forte")
+        if score >= 50: return ("🟡", "Atenção")
+        return ("🔴", "Defensivo")
+
+    def _explicar_sinal(row):
+        score = row.get("Score")
+        partes = []
+        if pd.notna(score):
+            if float(score) >= 75: partes.append("vários sinais técnicos estão favoráveis")
+            elif float(score) >= 50: partes.append("os sinais técnicos estão mistos")
+            else: partes.append("os sinais técnicos estão mais defensivos")
+        rsi = row.get("RSI")
+        if pd.notna(rsi):
+            if float(rsi) < 30: partes.append("RSI em região de sobrevenda")
+            elif float(rsi) > 70: partes.append("RSI em região de sobrecompra")
+            else: partes.append("RSI em faixa intermediária")
+        mm20, mm50 = row.get("MM20"), row.get("MM50")
+        if pd.notna(mm20) and pd.notna(mm50):
+            partes.append("MM20 acima da MM50" if float(mm20) > float(mm50) else "MM20 abaixo da MM50")
+        return " · ".join(partes) if partes else "Dados insuficientes para explicar o cenário."
+
+    if not tabela.empty:
+        tabela[["Semáforo", "Leitura"]] = tabela.apply(
+            lambda r: pd.Series(_semaforo_score(r.get("Score"))), axis=1
+        )
+        tabela["Por que? "] = tabela.apply(_explicar_sinal, axis=1)
+        tabela.rename(columns={"Por que? ": "Por que?"}, inplace=True)
+        tabela["Posição"] = None
+        valid_rank = tabela.dropna(subset=["Score"]).sort_values(["Score", "R/R"], ascending=[False, False])
+        for pos, idx in enumerate(valid_rank.index, 1):
+            tabela.loc[idx, "Posição"] = pos
+
     # V17: variação do Score entre ciclos para detectar aceleração ou perda de força.
     scores_anteriores = st.session_state.get("ultimos_scores", {})
     if not tabela.empty:
@@ -537,14 +573,18 @@ def painel():
 </div>
 """, unsafe_allow_html=True)
         ranking25 = valid_scores.sort_values(["Score", "R/R"], ascending=[False, False]).head(5)
-        with st.expander("🏆 Top 5 do monitoramento", expanded=False):
-            for _, rr in ranking25.iterrows():
+        with st.expander("🏆 Top 5 inteligente", expanded=True):
+            for pos, (_, rr) in enumerate(ranking25.iterrows(), 1):
                 score25 = int(rr["Score"])
                 sinal25 = str(rr["Sinal"])
+                sem25 = str(rr.get("Semáforo", "⚪"))
+                leitura25 = str(rr.get("Leitura", "Sem dados"))
+                motivo25 = str(rr.get("Por que?", ""))
                 st.markdown(f"""
 <div class="v27-rank">
-  <div class="v27-rank-row"><strong>{rr["Ativo"]}</strong><span class="v27-score">{score25}/100 · {sinal25}</span></div>
+  <div class="v27-rank-row"><strong>#{pos} · {rr["Ativo"]}</strong><span class="v27-score">{sem25} {score25}/100 · {sinal25}</span></div>
   <div class="v27-bar"><div class="v27-fill" style="width:{score25}%"></div></div>
+  <div class="muted" style="margin-top:.35rem;">{leitura25} · {motivo25}</div>
 </div>
 """, unsafe_allow_html=True)
     st.markdown('<div id="scanner-section"></div><div class="section">🔎 Scanner de oportunidades</div>', unsafe_allow_html=True)
@@ -572,6 +612,10 @@ def painel():
             "ADX": st.column_config.NumberColumn(format="%.1f"),
             "Volume": st.column_config.NumberColumn(format="%.0f"),
             "Score": st.column_config.NumberColumn(format="%d/100"),
+            "Semáforo": st.column_config.TextColumn(),
+            "Leitura": st.column_config.TextColumn(),
+            "Por que?": st.column_config.TextColumn(),
+            "Posição": st.column_config.NumberColumn(format="%d"),
             "Δ Score": st.column_config.NumberColumn(format="%+.0f"),
             "Candle": st.column_config.TextColumn(),
             "R/R": st.column_config.NumberColumn(format="1:%.2f"),
