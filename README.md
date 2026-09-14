@@ -1,4 +1,4 @@
-# BolsaIA V17 — Dashboard Profissional
+# BolsaIA V18 — Dashboard Comercial
 
 Aplicativo educacional em Streamlit para análise técnica, scanner de oportunidades, acompanhamento de carteira simulada e dimensionamento hipotético de posição por risco.
 
@@ -34,3 +34,12 @@ V16 — melhorias
 - Preparação da interface para futuros clientes.
 - Mantidas as funções técnicas, radar, risco, dividendos, carteira simulada e exportações.
 - Nenhuma ordem real é enviada.
+
+
+## V18 — dashboard comercial
+- Visão executiva com KPIs para leitura rápida.
+- Radar visual com barra de força do Score e sinal destacado.
+- Explicação resumida do motivo de cada sinal na análise detalhada.
+- Identidade de produto preparada para demonstrações e futuros clientes.
+- Exportações atualizadas para a versão V18.
+- Mantida a separação entre simulação educacional e ordens reais.

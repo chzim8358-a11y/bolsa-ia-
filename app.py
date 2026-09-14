@@ -10,7 +10,7 @@ from analisador import analisar, analisar_candles, calcular_plano
 from dividendos import obter_dividendos_yahoo
 
 st.set_page_config(
-    page_title="BolsaIA V17 | Inteligência de Mercado",
+    page_title="BolsaIA V18 | Inteligência de Mercado",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -52,6 +52,15 @@ st.markdown("""
         border-radius: 10px;
         font-weight: 650;
     }
+    .exec-card {
+        border: 1px solid rgba(0,0,0,.08); border-radius: 16px;
+        padding: 1rem 1.05rem; background: rgba(255,255,255,.9);
+        box-shadow: 0 5px 18px rgba(20,40,80,.05);
+    }
+    .exec-label { color:#6b7280; font-size:.78rem; font-weight:650; text-transform:uppercase; letter-spacing:.04em; }
+    .exec-value { font-size:1.55rem; font-weight:800; margin-top:.18rem; }
+    .signal-pill { display:inline-block; padding:.28rem .7rem; border-radius:999px; font-weight:750; font-size:.8rem; background:#eef4ff; border:1px solid #d7e4ff; }
+    .reason { padding:.38rem .6rem; margin:.2rem 0; border-radius:9px; background:#f7f8fa; border:1px solid rgba(0,0,0,.05); }
 </style>
 <div class="hero">
     <h1>📈 BolsaIA <span style="font-size:.55em;">V17</span></h1>
@@ -278,6 +287,25 @@ def painel():
     if mudancas:
         st.warning("🔔 Mudança de sinal: " + " · ".join(mudancas))
 
+    # V18: visão executiva para apresentação a clientes.
+    valid_scores = tabela.dropna(subset=["Score"]).copy()
+    total_monitorados = len(tabela)
+    melhor_score = int(valid_scores["Score"].max()) if not valid_scores.empty else None
+    melhor_ativo = str(valid_scores.loc[valid_scores["Score"].idxmax(), "Ativo"]) if not valid_scores.empty else "N/D"
+    compras = int(valid_scores["Sinal"].astype(str).str.startswith("COMPRA").sum()) if not valid_scores.empty else 0
+    dados_frescos = int((tabela["Status dado"] == "🟢 fresco").sum())
+    st.markdown('<div class="section">📊 Visão executiva</div>', unsafe_allow_html=True)
+    e1, e2, e3, e4 = st.columns(4)
+    with e1:
+        st.markdown(f'<div class="exec-card"><div class="exec-label">Ativos monitorados</div><div class="exec-value">{total_monitorados}</div><div class="muted">universo atual</div></div>', unsafe_allow_html=True)
+    with e2:
+        st.markdown(f'<div class="exec-card"><div class="exec-label">Maior Score</div><div class="exec-value">{melhor_score if melhor_score is not None else "N/D"}/100</div><div class="muted">{melhor_ativo}</div></div>', unsafe_allow_html=True)
+    with e3:
+        st.markdown(f'<div class="exec-card"><div class="exec-label">Sinais de compra</div><div class="exec-value">{compras}</div><div class="muted">no monitoramento atual</div></div>', unsafe_allow_html=True)
+    with e4:
+        st.markdown(f'<div class="exec-card"><div class="exec-label">Dados frescos</div><div class="exec-value">{dados_frescos}/{total_monitorados}</div><div class="muted">idade ≤ 2 min</div></div>', unsafe_allow_html=True)
+    st.caption("Visão executiva resumida para leitura rápida. Os indicadores são técnicos e educacionais; não representam probabilidade de retorno.")
+
     st.markdown('<div class="section">🔎 Scanner de oportunidades</div>', unsafe_allow_html=True)
     stamp = st.session_state.get("ultima_atualizacao_painel")
     if stamp is not None:
@@ -318,7 +346,7 @@ def painel():
     )
 
     csv_scanner = tabela.to_csv(index=False).encode("utf-8")
-    st.download_button("⬇️ Exportar scanner CSV", csv_scanner, file_name="bolsaia_scanner_v17.csv", mime="text/csv", key="export_scanner_v17")
+    st.download_button("⬇️ Exportar scanner CSV", csv_scanner, file_name="bolsaia_scanner_v18.csv", mime="text/csv", key="export_scanner_v18")
 
     # V13: resumo de risco do scanner.
     st.markdown('<div class="section">🛡️ Gestão de risco por ativo</div>', unsafe_allow_html=True)
@@ -348,7 +376,7 @@ def painel():
 
     # V17: snapshot completo para auditoria da sessão.
     csv_snapshot = tabela.to_csv(index=False).encode("utf-8")
-    st.download_button("⬇️ Exportar snapshot completo CSV", csv_snapshot, file_name="bolsaia_snapshot_v17.csv", mime="text/csv", key="export_snapshot_v17")
+    st.download_button("⬇️ Exportar snapshot completo CSV", csv_snapshot, file_name="bolsaia_snapshot_v18.csv", mime="text/csv", key="export_snapshot_v18")
 
     # Radar V9: ranking visual das melhores pontuações entre os ativos monitorados.
     st.markdown('<div class="section">🏆 Radar de Oportunidades</div>', unsafe_allow_html=True)
@@ -361,7 +389,10 @@ def painel():
         for i, (_, row) in enumerate(top.iterrows()):
             with cards[i]:
                 medalha = ["🥇", "🥈", "🥉"][i]
-                st.metric(f"{medalha} {row['Ativo']}", f"{int(row['Score'])}/100", row["Sinal"])
+                st.markdown(f"### {medalha} {row['Ativo']}")
+                st.metric("Score técnico", f"{int(row['Score'])}/100")
+                st.progress(min(max(int(row['Score']), 0), 100), text=f"Força do sinal: {int(row['Score'])}%")
+                st.markdown(f"<span class='signal-pill'>{row['Sinal']}</span>", unsafe_allow_html=True)
                 rr = row["R/R"]
                 dy = row["Yield 12m"]
                 st.caption(f"R/R: {('1:' + format(rr, '.2f')) if pd.notna(rr) else 'N/D'} · Yield 12m: {(format(dy, '.2f') + '%') if pd.notna(dy) else 'N/D'}")
@@ -386,7 +417,7 @@ def painel():
         hist_alertas["hora"] = hist_alertas["hora"].dt.strftime("%d/%m/%Y %H:%M:%S")
         st.dataframe(hist_alertas, use_container_width=True, hide_index=True, column_config={"preco": st.column_config.NumberColumn("Preço", format="R$ %.2f"), "score": st.column_config.NumberColumn("Score", format="%d/100")})
         csv_alertas = hist_alertas.to_csv(index=False).encode("utf-8")
-        st.download_button("⬇️ Exportar alertas CSV", csv_alertas, file_name="bolsaia_alertas_v17.csv", mime="text/csv")
+        st.download_button("⬇️ Exportar alertas CSV", csv_alertas, file_name="bolsaia_alertas_v18.csv", mime="text/csv")
     else:
         st.info("Nenhum alerta registrado nesta sessão ainda. O histórico começa quando um ativo atingir o limiar configurado.")
 
@@ -479,7 +510,7 @@ def painel():
             st.caption("A evolução é registrada somente durante esta sessão do app; ela não representa histórico de rentabilidade real.")
 
             csv_carteira = carteira_df.to_csv(index=False).encode("utf-8")
-            st.download_button("⬇️ Exportar carteira CSV", csv_carteira, file_name="bolsaia_carteira_v17.csv", mime="text/csv")
+            st.download_button("⬇️ Exportar carteira CSV", csv_carteira, file_name="bolsaia_carteira_v18.csv", mime="text/csv")
     else:
         st.info("Nenhuma posição simulada cadastrada.")
 
@@ -562,6 +593,9 @@ def painel():
         distancia_suporte = ((float(ultima["Close"]) / float(ultima["Suporte20"])) - 1) * 100 if float(ultima["Suporte20"]) else 0
         m5.metric("Suporte 20", f"R$ {float(ultima['Suporte20']):.2f}", help=f"Preço está {distancia_suporte:.1f}% acima do suporte recente.")
         st.caption("O Score IA combina tendência, RSI, volume, MACD e leitura de candles. É um modelo de análise técnica educacional; não garante movimentos futuros.")
+        st.markdown("### 💡 Por que este sinal?")
+        for motivo in motivos[:6]:
+            st.markdown(f"<div class='reason'>• {motivo}</div>", unsafe_allow_html=True)
 
         st.markdown("### 🎯 Plano técnico")
         p1, p2, p3, p4 = st.columns(4)
