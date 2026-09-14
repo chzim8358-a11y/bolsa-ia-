@@ -70,3 +70,10 @@ A BolsaIA é uma ferramenta de análise técnica educacional/simulada. Scores, s
 - Identidade e exportações atualizadas para V25.
 - Mantidos os cálculos técnicos, scanner, risco, carteira simulada, dividendos e fontes BTG/Yahoo.
 - Nenhuma ordem real é enviada.
+
+
+## V27
+- Expansão do universo com FIIs/imobiliário, incluindo XPML11.
+- Preço mais atual disponível por fonte: BTG realtime para ações quando configurado e Yahoo como fallback/FIIs.
+- Origem do preço exibida no scanner para transparência sobre a latência.
+- Ambiente exclusivamente demonstrativo; nenhuma ordem real é enviada.

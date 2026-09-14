@@ -3,7 +3,7 @@ from datetime import date, timedelta
 import pandas as pd
 import yfinance as yf
 
-ATIVOS_B3={"PETR4":"PETR4.SA","VALE3":"VALE3.SA","ITUB4":"ITUB4.SA","BBAS3":"BBAS3.SA","BBDC4":"BBDC4.SA","WEGE3":"WEGE3.SA","ABEV3":"ABEV3.SA","MGLU3":"MGLU3.SA","B3SA3":"B3SA3.SA","RENT3":"RENT3.SA","SUZB3":"SUZB3.SA","PRIO3":"PRIO3.SA","BBSE3":"BBSE3.SA","CMIG3":"CMIG3.SA","CMIG4":"CMIG4.SA","ELET3":"ELET3.SA","ELET6":"ELET6.SA","CPLE6":"CPLE6.SA","CPFE3":"CPFE3.SA","TAEE11":"TAEE11.SA","CSNA3":"CSNA3.SA","CMIN3":"CMIN3.SA","LREN3":"LREN3.SA","B3SA3":"B3SA3.SA","RENT3":"RENT3.SA","SUZB3":"SUZB3.SA","EMBR3":"EMBR3.SA"}
+ATIVOS_B3={"PETR4":"PETR4.SA","VALE3":"VALE3.SA","ITUB4":"ITUB4.SA","BBAS3":"BBAS3.SA","BBDC4":"BBDC4.SA","WEGE3":"WEGE3.SA","ABEV3":"ABEV3.SA","MGLU3":"MGLU3.SA","B3SA3":"B3SA3.SA","RENT3":"RENT3.SA","SUZB3":"SUZB3.SA","PRIO3":"PRIO3.SA","BBSE3":"BBSE3.SA","CMIG3":"CMIG3.SA","CMIG4":"CMIG4.SA","ELET3":"ELET3.SA","ELET6":"ELET6.SA","CPLE6":"CPLE6.SA","CPFE3":"CPFE3.SA","TAEE11":"TAEE11.SA","CSNA3":"CSNA3.SA","CMIN3":"CMIN3.SA","LREN3":"LREN3.SA","B3SA3":"B3SA3.SA","RENT3":"RENT3.SA","SUZB3":"SUZB3.SA","EMBR3":"EMBR3.SA","XPML11":"XPML11.SA","MXRF11":"MXRF11.SA","HGLG11":"HGLG11.SA","BTLG11":"BTLG11.SA","KNCR11":"KNCR11.SA","XPLG11":"XPLG11.SA","TRXF11":"TRXF11.SA","XPIN11":"XPIN11.SA"}
 INTERVALOS={"1m":"1m","5m":"5m","15m":"15m","30m":"30m","1h":"1h"}
 YAHOO_PERIODOS={"1m":"5d","5m":"30d","15m":"60d","30m":"60d","1h":"6mo"}
 
@@ -78,3 +78,21 @@ def cotacoes_btg(tickers,secrets=None):
     btg=_btg_client(secrets); quotes=btg.Quotes(api_key=_btg_api_key(secrets))
     df=quotes.get_quote(tickers=list(tickers),market_type="stocks",mode="realtime",raw_data=False)
     return df if isinstance(df,pd.DataFrame) else pd.DataFrame(df)
+
+
+def cotacoes_yahoo_realtime(tickers):
+    """Obtém o último preço disponível no Yahoo Finance.
+    Observação: a disponibilidade/latência depende da fonte; não é garantido como tick-by-tick.
+    """
+    out = {}
+    for ticker in tickers:
+        simbolo = ATIVOS_B3.get(ticker, ticker if ticker.endswith(".SA") else f"{ticker}.SA")
+        try:
+            t = yf.Ticker(simbolo)
+            info = t.fast_info
+            price = info.get("last_price") if hasattr(info, "get") else None
+            if price is not None and pd.notna(price):
+                out[ticker] = float(price)
+        except Exception:
+            pass
+    return out

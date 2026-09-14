@@ -4,7 +4,7 @@ import base64
 from pathlib import Path
 
 from dados import (
-    dados_yahoo, dados_btg_realtime, cotacoes_btg, btg_disponivel,
+    dados_yahoo, dados_btg_realtime, cotacoes_btg, cotacoes_yahoo_realtime, btg_disponivel,
     ATIVOS_B3,
 )
 from indicadores import calcular_indicadores
@@ -12,13 +12,13 @@ from analisador import analisar, analisar_candles, calcular_plano
 from dividendos import obter_dividendos_yahoo
 
 st.set_page_config(
-    page_title="BolsaIA V26 | Inteligência de Mercado",
+    page_title="BolsaIA V27 | Inteligência de Mercado",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# V25 — identidade visual premium baseada na nova marca BolsaIA; foco em apresentação comercial.
+# V27 — identidade visual premium baseada na nova marca BolsaIA; foco em apresentação comercial.
 _logo_path = Path(__file__).with_name("logo.png")
 _logo_b64 = base64.b64encode(_logo_path.read_bytes()).decode("ascii") if _logo_path.exists() else ""
 _hero_html = """
@@ -51,21 +51,21 @@ _hero_html = """
 .v22-tile strong { display:block; color:#f8fafc; font-size:.92rem; }
 .v22-tile span { color:#91a6c1; font-size:.76rem; }
 @media (max-width:700px) { .v22-grid { grid-template-columns:1fr; } .v22-title { font-size:1.2rem; } } 
-.v25-market { display:grid; grid-template-columns:1.4fr .8fr .8fr .8fr; gap:.7rem; margin:.8rem 0 1rem; }
-.v25-panel { border:1px solid rgba(96,170,255,.14); border-radius:16px; padding:.85rem .95rem; background:rgba(12,23,40,.78); }
-.v25-kicker { color:#7ddcff; font-size:.68rem; font-weight:900; text-transform:uppercase; letter-spacing:.08em; }
-.v25-big { color:#f8fafc; font-size:1.35rem; font-weight:900; margin-top:.15rem; }
-.v25-small { color:#8fa6c5; font-size:.76rem; margin-top:.18rem; }
-.v25-dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:.4rem; background:#5ee6a1; box-shadow:0 0 12px rgba(94,230,161,.45); }
-.v25-dot.warn { background:#ffd166; box-shadow:0 0 12px rgba(255,209,102,.35); }
-.v25-dot.bad { background:#ff6b7a; box-shadow:0 0 12px rgba(255,107,122,.35); }
-.v25-rank { padding:.65rem .75rem; border-radius:12px; background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.06); margin:.4rem 0; }
-.v25-rank-row { display:flex; align-items:center; justify-content:space-between; gap:.6rem; }
-.v25-score { font-weight:900; color:#f8fafc; }
-.v25-bar { height:7px; border-radius:99px; background:#17253a; overflow:hidden; margin-top:.45rem; }
-.v25-fill { height:100%; border-radius:99px; background:#46cfff; }
-@media (max-width:900px) { .v25-market { grid-template-columns:1fr 1fr; } }
-@media (max-width:600px) { .v25-market { grid-template-columns:1fr; } }
+.v27-market { display:grid; grid-template-columns:1.4fr .8fr .8fr .8fr; gap:.7rem; margin:.8rem 0 1rem; }
+.v27-panel { border:1px solid rgba(96,170,255,.14); border-radius:16px; padding:.85rem .95rem; background:rgba(12,23,40,.78); }
+.v27-kicker { color:#7ddcff; font-size:.68rem; font-weight:900; text-transform:uppercase; letter-spacing:.08em; }
+.v27-big { color:#f8fafc; font-size:1.35rem; font-weight:900; margin-top:.15rem; }
+.v27-small { color:#8fa6c5; font-size:.76rem; margin-top:.18rem; }
+.v27-dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:.4rem; background:#5ee6a1; box-shadow:0 0 12px rgba(94,230,161,.45); }
+.v27-dot.warn { background:#ffd166; box-shadow:0 0 12px rgba(255,209,102,.35); }
+.v27-dot.bad { background:#ff6b7a; box-shadow:0 0 12px rgba(255,107,122,.35); }
+.v27-rank { padding:.65rem .75rem; border-radius:12px; background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.06); margin:.4rem 0; }
+.v27-rank-row { display:flex; align-items:center; justify-content:space-between; gap:.6rem; }
+.v27-score { font-weight:900; color:#f8fafc; }
+.v27-bar { height:7px; border-radius:99px; background:#17253a; overflow:hidden; margin-top:.45rem; }
+.v27-fill { height:100%; border-radius:99px; background:#46cfff; }
+@media (max-width:900px) { .v27-market { grid-template-columns:1fr 1fr; } }
+@media (max-width:600px) { .v27-market { grid-template-columns:1fr; } }
 .signal-pill { display:inline-block; padding:.3rem .72rem; border-radius:999px; font-weight:800; font-size:.8rem; background:#152744; color:#bcd3ff; border:1px solid #294a80; }
 .reason { padding:.45rem .65rem; margin:.25rem 0; border-radius:9px; background:#0d1728; border:1px solid rgba(255,255,255,.06); color:#d9e2f0; }
 .stApp, .stApp p, .stApp label, .stApp [data-testid="stMarkdownContainer"], .stApp [data-testid="stCaptionContainer"] { color:#dbe4f0; }
@@ -99,7 +99,7 @@ div[data-testid="stMetric"] { background:rgba(13,24,42,.82); border:1px solid rg
   <div class="brand-row">
     <img class="brand-logo" src="data:image/png;base64,LOGO_B64" />
     <div>
-      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V26</span></h1>
+      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V27</span></h1>
       <div class="tagline">Inteligência de mercado para análise técnica, radar e gestão de risco.</div>
       <div class="mini"><span class="chip">⚡ Scanner inteligente</span><span class="chip">📊 Análise técnica</span><span class="chip green">🛡️ Carteira simulada</span></div>
     </div>
@@ -117,7 +117,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 st.caption("Ferramenta educacional. Indicadores, scores e cenários são hipotéticos e não constituem recomendação de investimento.")
-st.caption("🧭 V26 · Painel de demonstração · Dados dependem da fonte configurada · Nenhuma ordem real é enviada")
+st.caption("🧭 V27 · Painel de demonstração · Preços dependem da fonte configurada · Nenhuma ordem real é enviada")
 
 # V15: status operacional, qualidade do dado e horário da última atualização.
 def _status_mercado():
@@ -148,18 +148,24 @@ SETOR_ATIVO = {
     "PETR4":"Petróleo", "PRIO3":"Petróleo", "VALE3":"Mineração", "CSNA3":"Mineração", "CMIN3":"Mineração",
     "ITUB4":"Bancos", "BBAS3":"Bancos", "BBDC4":"Bancos", "BBSE3":"Seguros", "B3SA3":"Serviços financeiros",
     "CMIG3":"Energia", "CMIG4":"Energia", "ELET3":"Energia", "ELET6":"Energia", "CPLE6":"Energia", "CPFE3":"Energia", "TAEE11":"Energia",
-    "WEGE3":"Indústria", "EMBR3":"Indústria", "ABEV3":"Consumo", "MGLU3":"Varejo", "LREN3":"Varejo", "RENT3":"Transportes", "SUZB3":"Papel e celulose"
+    "WEGE3":"Indústria", "EMBR3":"Indústria", "ABEV3":"Consumo", "MGLU3":"Varejo", "LREN3":"Varejo", "RENT3":"Transportes", "SUZB3":"Papel e celulose",
+    "XPML11":"FIIs / Imobiliário", "MXRF11":"FIIs / Imobiliário", "HGLG11":"FIIs / Imobiliário",
+    "BTLG11":"FIIs / Imobiliário", "KNCR11":"FIIs / Imobiliário", "XPLG11":"FIIs / Imobiliário",
+    "TRXF11":"FIIs / Imobiliário", "XPIN11":"FIIs / Imobiliário"
 }
 with st.expander("🧭 Filtro por setor", expanded=False):
     setores = sorted(set(SETOR_ATIVO.values()))
     setores_sel = st.multiselect("Setores", setores, default=setores)
-    ativos = [a for a in ativos if SETOR_ATIVO.get(a, "Outros") in setores_sel]
+    categorias = st.multiselect("Categoria", ["Ações", "FIIs / Imobiliário"], default=["Ações", "FIIs / Imobiliário"])
+    def _categoria(t):
+        return "FIIs / Imobiliário" if SETOR_ATIVO.get(t) == "FIIs / Imobiliário" else "Ações"
+    ativos = [a for a in ativos if SETOR_ATIVO.get(a, "Outros") in setores_sel and _categoria(a) in categorias]
 
 col1, col2, col3, col4 = st.columns(4)
 with col1:
     selecionados = st.multiselect(
         "Ativos monitorados", ativos,
-        default=["PETR4", "VALE3", "ITUB4", "BBAS3", "BBDC4", "CMIG4"],
+        default=["PETR4", "VALE3", "ITUB4", "BBAS3", "BBDC4", "CMIG4", "XPML11"],
     )
 with col2:
     intervalo = st.selectbox("Candles", ["1m", "5m", "15m", "30m", "1h"], index=1)
@@ -267,18 +273,37 @@ def painel():
     resultados = []
     detalhes = {}
     realtime_prices = {}
-    if usar_btg:
+    realtime_source = {}
+    # V27: preço mais atual disponível por fonte. BTG é usado para ações B3 quando configurado;
+    # FIIs e fallback usam Yahoo Finance. A interface informa a origem para não confundir
+    # cotação de mercado com dado tick-by-tick.
+    acoes_sel = [t for t in selecionados if SETOR_ATIVO.get(t) != "FIIs / Imobiliário"]
+    fiis_sel = [t for t in selecionados if SETOR_ATIVO.get(t) == "FIIs / Imobiliário"]
+    if usar_btg and acoes_sel:
         try:
-            realtime_prices = normalizar_cotacao_df(cotacoes_btg(selecionados, secrets=secrets))
-            if "__single__" in realtime_prices and len(selecionados) == 1:
-                realtime_prices[selecionados[0]] = realtime_prices.pop("__single__")
+            realtime_prices.update(normalizar_cotacao_df(cotacoes_btg(acoes_sel, secrets=secrets)))
+            if "__single__" in realtime_prices and len(acoes_sel) == 1:
+                realtime_prices[acoes_sel[0]] = realtime_prices.pop("__single__")
+            for t in acoes_sel:
+                if t in realtime_prices:
+                    realtime_source[t] = "BTG · realtime"
         except Exception as e:
-            st.warning(f"Cotações realtime indisponíveis nesta atualização: {e}")
+            st.warning(f"Cotações BTG indisponíveis nesta atualização: {e}")
+    yahoo_sel = [t for t in selecionados if t not in realtime_prices]
+    if yahoo_sel:
+        try:
+            yp = cotacoes_yahoo_realtime(yahoo_sel)
+            realtime_prices.update(yp)
+            for t in yp:
+                realtime_source[t] = "Yahoo · último preço disponível"
+        except Exception:
+            pass
 
     for ticker in selecionados:
         try:
             df, ultima, pontos, sinal, motivos, candle_leitura, candle_padroes = analisar_ativo(ticker)
             preco = realtime_prices.get(ticker, float(ultima["Close"]))
+            fonte_preco = realtime_source.get(ticker, "Candle · fallback")
             plano_scan = calcular_plano(ultima, preco)
             risco_pct = (plano_scan["risco_por_acao"] / preco * 100) if preco else None
             qtd_risco = int(risco_reais / plano_scan["risco_por_acao"]) if plano_scan["risco_por_acao"] > 0 else 0
@@ -292,6 +317,8 @@ def painel():
             resultados.append({
                 "Ativo": ticker,
                 "Preço": preco,
+                "Categoria": "FII" if SETOR_ATIVO.get(ticker) == "FIIs / Imobiliário" else "Ação",
+                "Fonte preço": fonte_preco,
                 "RSI": float(ultima["RSI"]),
                 "MM20": float(ultima["MM20"]),
                 "MM50": float(ultima["MM50"]),
@@ -365,7 +392,7 @@ def painel():
     with e4:
         st.markdown(f'<div class="exec-card"><div class="exec-label">Dados frescos</div><div class="exec-value">{dados_frescos}/{total_monitorados}</div><div class="muted">idade ≤ 2 min</div></div>', unsafe_allow_html=True)
     st.caption("Visão executiva resumida para leitura rápida. Os indicadores são técnicos e educacionais; não representam probabilidade de retorno.")
-    # V24: camada comercial de leitura rápida, sem alterar os cálculos do scanner.
+    # V27: camada comercial de leitura rápida, sem alterar os cálculos do scanner.
     if not valid_scores.empty:
         top_row = valid_scores.sort_values(["Score", "R/R"], ascending=[False, False]).iloc[0]
         top_ativo = str(top_row["Ativo"])
@@ -377,7 +404,7 @@ def painel():
         status_top = str(top_row["Status dado"])
         html = f"""
 <div class="v22-hero">
-  <div class="v22-kicker">🎯 Destaque da sessão · V24</div>
+  <div class="v22-kicker">🎯 Destaque da sessão · V27</div>
   <div class="v22-title">{top_ativo} · Score {top_score}/100 · {top_sinal}</div>
   <div class="v22-sub">Leitura executiva baseada nos mesmos indicadores técnicos do scanner. Use os detalhes abaixo para entender o cenário.</div>
   <div class="v22-grid">
@@ -390,7 +417,7 @@ def painel():
 """
         st.markdown(html, unsafe_allow_html=True)
 
-    # V25: resumo comercial do mercado e ranking compacto, sem alterar os cálculos.
+    # V27: resumo comercial do mercado e ranking compacto, sem alterar os cálculos.
     if not valid_scores.empty:
         media_score = float(valid_scores["Score"].mean())
         fortes = int((valid_scores["Score"] >= 75).sum())
@@ -403,11 +430,11 @@ def painel():
         else:
             clima, dot_cls = "Viés técnico defensivo", "bad"
         st.markdown(f"""
-<div class="v25-market">
-  <div class="v25-panel"><div class="v25-kicker">🧭 Leitura do universo</div><div class="v25-big"><span class="v25-dot {dot_cls}"></span>{clima}</div><div class="v25-small">Score médio dos ativos monitorados: {media_score:.0f}/100</div></div>
-  <div class="v25-panel"><div class="v25-kicker">🔥 Fortes</div><div class="v25-big">{fortes}</div><div class="v25-small">Score ≥ 75</div></div>
-  <div class="v25-panel"><div class="v25-kicker">⏳ Seletivos</div><div class="v25-big">{neutros}</div><div class="v25-small">Score entre 40 e 59</div></div>
-  <div class="v25-panel"><div class="v25-kicker">⚠️ Defensivos</div><div class="v25-big">{quedas}</div><div class="v25-small">Score &lt; 40</div></div>
+<div class="v27-market">
+  <div class="v27-panel"><div class="v27-kicker">🧭 Leitura do universo</div><div class="v27-big"><span class="v27-dot {dot_cls}"></span>{clima}</div><div class="v27-small">Score médio dos ativos monitorados: {media_score:.0f}/100</div></div>
+  <div class="v27-panel"><div class="v27-kicker">🔥 Fortes</div><div class="v27-big">{fortes}</div><div class="v27-small">Score ≥ 75</div></div>
+  <div class="v27-panel"><div class="v27-kicker">⏳ Seletivos</div><div class="v27-big">{neutros}</div><div class="v27-small">Score entre 40 e 59</div></div>
+  <div class="v27-panel"><div class="v27-kicker">⚠️ Defensivos</div><div class="v27-big">{quedas}</div><div class="v27-small">Score &lt; 40</div></div>
 </div>
 """, unsafe_allow_html=True)
         ranking25 = valid_scores.sort_values(["Score", "R/R"], ascending=[False, False]).head(5)
@@ -416,9 +443,9 @@ def painel():
                 score25 = int(rr["Score"])
                 sinal25 = str(rr["Sinal"])
                 st.markdown(f"""
-<div class="v25-rank">
-  <div class="v25-rank-row"><strong>{rr["Ativo"]}</strong><span class="v25-score">{score25}/100 · {sinal25}</span></div>
-  <div class="v25-bar"><div class="v25-fill" style="width:{score25}%"></div></div>
+<div class="v27-rank">
+  <div class="v27-rank-row"><strong>{rr["Ativo"]}</strong><span class="v27-score">{score25}/100 · {sinal25}</span></div>
+  <div class="v27-bar"><div class="v27-fill" style="width:{score25}%"></div></div>
 </div>
 """, unsafe_allow_html=True)
     st.markdown('<div class="section">🔎 Scanner de oportunidades</div>', unsafe_allow_html=True)
@@ -437,6 +464,8 @@ def painel():
         tabela, use_container_width=True, hide_index=True,
         column_config={
             "Preço": st.column_config.NumberColumn(format="R$ %.2f"),
+            "Categoria": st.column_config.TextColumn(),
+            "Fonte preço": st.column_config.TextColumn(),
             "RSI": st.column_config.NumberColumn(format="%.1f"),
             "MM20": st.column_config.NumberColumn(format="R$ %.2f"),
             "MM50": st.column_config.NumberColumn(format="R$ %.2f"),
@@ -461,7 +490,7 @@ def painel():
     )
 
     csv_scanner = tabela.to_csv(index=False).encode("utf-8")
-    st.download_button("⬇️ Exportar scanner CSV", csv_scanner, file_name="bolsaia_scanner_v25.csv", mime="text/csv", key="export_scanner_v25")
+    st.download_button("⬇️ Exportar scanner CSV", csv_scanner, file_name="bolsaia_scanner_v27.csv", mime="text/csv", key="export_scanner_v27")
 
     # V13: resumo de risco do scanner.
     st.markdown('<div class="section">🛡️ Gestão de risco por ativo</div>', unsafe_allow_html=True)
@@ -491,7 +520,7 @@ def painel():
 
     # V17: snapshot completo para auditoria da sessão.
     csv_snapshot = tabela.to_csv(index=False).encode("utf-8")
-    st.download_button("⬇️ Exportar snapshot completo CSV", csv_snapshot, file_name="bolsaia_snapshot_v25.csv", mime="text/csv", key="export_snapshot_v25")
+    st.download_button("⬇️ Exportar snapshot completo CSV", csv_snapshot, file_name="bolsaia_snapshot_v27.csv", mime="text/csv", key="export_snapshot_v27")
 
     # Radar V9: ranking visual das melhores pontuações entre os ativos monitorados.
     st.markdown('<div class="section">🏆 Radar de Oportunidades</div>', unsafe_allow_html=True)
@@ -625,7 +654,7 @@ def painel():
             st.caption("A evolução é registrada somente durante esta sessão do app; ela não representa histórico de rentabilidade real.")
 
             csv_carteira = carteira_df.to_csv(index=False).encode("utf-8")
-            st.download_button("⬇️ Exportar carteira CSV", csv_carteira, file_name="bolsaia_carteira_v25.csv", mime="text/csv")
+            st.download_button("⬇️ Exportar carteira CSV", csv_carteira, file_name="bolsaia_carteira_v27.csv", mime="text/csv")
     else:
         st.info("Nenhuma posição simulada cadastrada.")
 
@@ -770,7 +799,7 @@ def painel():
         st.caption("Fallback: Yahoo Finance. Ele não deve ser tratado como feed profissional em tempo real.")
 
 
-st.markdown("<div class='footer'>BolsaIA V25 · Inteligência de Mercado · Demonstração educacional · Dados dependem da fonte configurada</div>", unsafe_allow_html=True)
+st.markdown("<div class='footer'>BolsaIA V27 · Inteligência de Mercado · Demonstração educacional · Dados dependem da fonte configurada</div>", unsafe_allow_html=True)
 
 if hasattr(st, "fragment"):
     @st.fragment(run_every="5s")
