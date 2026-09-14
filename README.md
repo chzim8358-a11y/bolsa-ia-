@@ -1,6 +1,6 @@
-# BolsaIA V29
+# BolsaIA V30
 
-V29 mantém a identidade visual e as funcionalidades da V28 e corrige os atalhos de navegação.
+V30 mantém a identidade visual e as funcionalidades da V28 e corrige os atalhos de navegação.
 
 ## Correção dos atalhos
 - 🏠 Início: volta ao topo.
@@ -13,3 +13,7 @@ Os atalhos de Início, Scanner e Análise usam âncoras da própria página, evi
 
 ## Observação
 O app continua sendo demonstrativo e não envia ordens reais.
+
+
+## V30
+Home inteligente em linguagem simples para iniciantes, preservando scanner, análise, risco, FIIs, login, configurações e atalhos da versão anterior.

@@ -12,7 +12,7 @@ from analisador import analisar, analisar_candles, calcular_plano
 from dividendos import obter_dividendos_yahoo
 
 st.set_page_config(
-    page_title="BolsaIA V29 | Inteligência de Mercado",
+    page_title="BolsaIA V30 | Inteligência de Mercado",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -106,7 +106,7 @@ div[data-testid="stMetric"] { background:rgba(13,24,42,.82); border:1px solid rg
   <div class="brand-row">
     <img class="brand-logo" src="data:image/png;base64,LOGO_B64" />
     <div>
-      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V29</span></h1>
+      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V30</span></h1>
       <div class="tagline">Inteligência de mercado para análise técnica, radar e gestão de risco.</div>
       <div class="mini"><span class="chip">⚡ Scanner inteligente</span><span class="chip">📊 Análise técnica</span><span class="chip green">🛡️ Carteira simulada</span></div>
     </div>
@@ -180,7 +180,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 st.caption("Ferramenta educacional. Indicadores, scores e cenários são hipotéticos e não constituem recomendação de investimento.")
-st.caption("🧭 V29 · Painel de demonstração · Preços dependem da fonte configurada · Nenhuma ordem real é enviada")
+st.caption("🧭 V30 · Painel de demonstração · Preços dependem da fonte configurada · Nenhuma ordem real é enviada")
 
 # V15: status operacional, qualidade do dado e horário da última atualização.
 def _status_mercado():
@@ -193,6 +193,31 @@ def _status_mercado():
 
 status_mercado, agora_status = _status_mercado()
 st.caption(f"{status_mercado} · Horário de Brasília: {agora_status.strftime('%d/%m/%Y %H:%M:%S')}")
+
+# V30: Home inteligente para leitura rápida por iniciantes.
+def _texto_tendencia(media_score):
+    if media_score >= 65:
+        return "🟢 Mercado com viés técnico positivo", "Há mais sinais favoráveis no universo monitorado neste momento."
+    if media_score >= 50:
+        return "🟡 Mercado misto / seletivo", "Existem oportunidades pontuais, mas os sinais estão divididos."
+    return "🔴 Mercado mais defensivo", "Os sinais técnicos estão menos favoráveis; vale acompanhar o risco com atenção."
+
+if st.session_state.pagina == "🏠 Início":
+    st.markdown('<div class="section">🧠 Seu painel em linguagem simples</div>', unsafe_allow_html=True)
+    st.info("👋 **Bem-vindo à BolsaIA.** Você não precisa entender todos os indicadores para começar. O painel abaixo resume o que os dados técnicos estão mostrando e deixa os detalhes disponíveis quando você quiser aprofundar.")
+    h1, h2, h3 = st.columns(3)
+    with h1:
+        st.markdown('<div class="exec-card"><div class="exec-label">O que procurar</div><div class="exec-value">🏆 Score</div><div class="muted">Quanto maior, mais sinais técnicos favoráveis.</div></div>', unsafe_allow_html=True)
+    with h2:
+        st.markdown('<div class="exec-card"><div class="exec-label">Como entender</div><div class="exec-value">🟢🟡🔴</div><div class="muted">Verde = favorável · amarelo = atenção · vermelho = defensivo.</div></div>', unsafe_allow_html=True)
+    with h3:
+        st.markdown('<div class="exec-card"><div class="exec-label">Dados</div><div class="exec-value">📡 Atualizados</div><div class="muted">A fonte e a qualidade do preço aparecem no scanner.</div></div>', unsafe_allow_html=True)
+    st.markdown("### 🚦 Como usar a BolsaIA")
+    st.write("**1.** Abra o **Scanner** para encontrar ativos que merecem atenção.")
+    st.write("**2.** Escolha um ativo e abra a **Análise** para entender o motivo do sinal.")
+    st.write("**3.** Consulte **Risco** e o plano técnico antes de interpretar qualquer cenário.")
+    st.caption("💡 Os sinais são educacionais e baseados em indicadores técnicos. Eles não garantem retorno e não substituem análise profissional.")
+
 
 if st.session_state.pagina == "⚡ Scanner":
     st.markdown("<div class='section'>⚡ Scanner de oportunidades</div>", unsafe_allow_html=True)
@@ -564,7 +589,7 @@ def painel():
     )
 
     csv_scanner = tabela.to_csv(index=False).encode("utf-8")
-    st.download_button("⬇️ Exportar scanner CSV", csv_scanner, file_name="bolsaia_scanner_v27.csv", mime="text/csv", key="export_scanner_v27")
+    st.download_button("⬇️ Exportar scanner CSV", csv_scanner, file_name="bolsaia_scanner_v30.csv", mime="text/csv", key="export_scanner_v27")
 
     # V13: resumo de risco do scanner.
     st.markdown('<div class="section">🛡️ Gestão de risco por ativo</div>', unsafe_allow_html=True)
@@ -594,7 +619,7 @@ def painel():
 
     # V17: snapshot completo para auditoria da sessão.
     csv_snapshot = tabela.to_csv(index=False).encode("utf-8")
-    st.download_button("⬇️ Exportar snapshot completo CSV", csv_snapshot, file_name="bolsaia_snapshot_v27.csv", mime="text/csv", key="export_snapshot_v27")
+    st.download_button("⬇️ Exportar snapshot completo CSV", csv_snapshot, file_name="bolsaia_snapshot_v30.csv", mime="text/csv", key="export_snapshot_v27")
 
     # Radar V9: ranking visual das melhores pontuações entre os ativos monitorados.
     st.markdown('<div class="section">🏆 Radar de Oportunidades</div>', unsafe_allow_html=True)
@@ -728,7 +753,7 @@ def painel():
             st.caption("A evolução é registrada somente durante esta sessão do app; ela não representa histórico de rentabilidade real.")
 
             csv_carteira = carteira_df.to_csv(index=False).encode("utf-8")
-            st.download_button("⬇️ Exportar carteira CSV", csv_carteira, file_name="bolsaia_carteira_v29.csv", mime="text/csv")
+            st.download_button("⬇️ Exportar carteira CSV", csv_carteira, file_name="bolsaia_carteira_v30.csv", mime="text/csv")
     else:
         st.info("Nenhuma posição simulada cadastrada.")
 
