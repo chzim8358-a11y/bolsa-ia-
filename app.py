@@ -9,8 +9,8 @@ from indicadores import calcular_indicadores
 from analisador import analisar, analisar_candles, calcular_plano
 from dividendos import obter_dividendos_yahoo
 
-st.set_page_config(page_title="BolsaIA v8", page_icon="📡", layout="wide")
-st.title("📡 BolsaIA v8 — análise B3 em tempo real")
+st.set_page_config(page_title="BolsaIA v9", page_icon="📡", layout="wide")
+st.title("📡 BolsaIA v9 — Radar de Oportunidades B3")
 st.caption("Motor educacional de análise técnica. Não é recomendação de investimento.")
 
 try:
@@ -103,6 +103,12 @@ def painel():
         try:
             df, ultima, pontos, sinal, motivos, candle_leitura, candle_padroes = analisar_ativo(ticker)
             preco = realtime_prices.get(ticker, float(ultima["Close"]))
+            plano_scan = calcular_plano(ultima, preco)
+            try:
+                div_scan = dividendos_atualizados(ticker)
+                dy_scan = ((div_scan.get("dividendos_12m") / preco) * 100) if preco and div_scan.get("dividendos_12m") is not None else None
+            except Exception:
+                dy_scan = None
             resultados.append({
                 "Ativo": ticker,
                 "Preço": preco,
@@ -113,12 +119,14 @@ def painel():
                 "Score": pontos,
                 "Sinal": sinal,
                 "Candle": candle_leitura,
+                "R/R": plano_scan["risco_retorno"],
+                "Yield 12m": dy_scan,
             })
             detalhes[ticker] = (df, ultima, pontos, sinal, motivos, preco, candle_leitura, candle_padroes)
         except Exception as e:
             resultados.append({
                 "Ativo": ticker, "Preço": None, "RSI": None, "MM20": None,
-                "MM50": None, "Volume": None, "Score": None, "Sinal": f"ERRO: {e}", "Candle": "ERRO",
+                "MM50": None, "Volume": None, "Score": None, "Sinal": f"ERRO: {e}", "Candle": "ERRO", "R/R": None, "Yield 12m": None,
             })
 
     tabela = pd.DataFrame(resultados)
@@ -141,8 +149,31 @@ def painel():
             "Volume": st.column_config.NumberColumn(format="%.0f"),
             "Score": st.column_config.NumberColumn(format="%d/100"),
             "Candle": st.column_config.TextColumn(),
+            "R/R": st.column_config.NumberColumn(format="1:%.2f"),
+            "Yield 12m": st.column_config.NumberColumn(format="%.2f%%"),
         },
     )
+
+    # Radar V9: ranking visual das melhores pontuações entre os ativos monitorados.
+    st.markdown("### 🏆 Radar de Oportunidades")
+    ranking = tabela.dropna(subset=["Score"]).sort_values(["Score", "R/R"], ascending=[False, False]).reset_index(drop=True)
+    if ranking.empty:
+        st.info("Ainda não há dados suficientes para montar o radar.")
+    else:
+        top = ranking.head(3)
+        cards = st.columns(len(top))
+        for i, (_, row) in enumerate(top.iterrows()):
+            with cards[i]:
+                medalha = ["🥇", "🥈", "🥉"][i]
+                st.metric(f"{medalha} {row['Ativo']}", f"{int(row['Score'])}/100", row["Sinal"])
+                rr = row["R/R"]
+                dy = row["Yield 12m"]
+                st.caption(f"R/R: {('1:' + format(rr, '.2f')) if pd.notna(rr) else 'N/D'} · Yield 12m: {(format(dy, '.2f') + '%') if pd.notna(dy) else 'N/D'}")
+
+    # Colunas extras ficam formatadas no painel completo.
+    # O ranking usa o mesmo Score técnico; não representa probabilidade de lucro.
+
+    st.caption("🏆 O radar ordena os ativos pelo Score técnico e usa o R/R como desempate. O ranking é educacional e não constitui recomendação de investimento.")
 
     disponiveis = [x for x in selecionados if x in detalhes]
     if disponiveis:

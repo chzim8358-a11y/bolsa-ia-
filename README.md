@@ -1,15 +1,21 @@
-# BolsaIA V8 — Confluência + Plano Técnico
+# BolsaIA v9 — Radar de Oportunidades
 
 Aplicativo educacional em Streamlit para análise técnica de ativos B3.
 
-## V8
-- Candles intraday
-- MM20/MM50, RSI, MACD e volume
-- Score de confluência técnica
-- Leitura simples de padrões de candles
-- Dividendos do Yahoo Finance
-- Plano técnico com alvo, stop, risco/retorno e ATR14
-- Confiança técnica = Score (não é probabilidade estatística)
-- Yahoo Finance como fallback quando BTG_API_KEY não está configurada
+## Novidades da V9
+- Radar/ranking dos ativos monitorados pelo Score técnico.
+- Top 3 oportunidades com Score, sinal, risco/retorno e Dividend Yield de 12 meses.
+- Tabela do scanner com R/R e Yield 12m.
+- Mantém candles, RSI, MACD, médias móveis, plano técnico, stop/alvo e dividendos.
+- BTG continua como feed realtime opcional; Yahoo Finance permanece como fallback.
 
-Não constitui recomendação de investimento.
+## Arquivos
+- `app.py`
+- `dados.py`
+- `indicadores.py`
+- `analisador.py`
+- `dividendos.py`
+- `requirements.txt`
+- `README.md`
+
+> O Score/ranking é uma ferramenta educacional de análise técnica e não garante movimentos futuros nem constitui recomendação de investimento.
