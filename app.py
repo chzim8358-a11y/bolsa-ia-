@@ -12,7 +12,7 @@ from analisador import analisar, analisar_candles, calcular_plano
 from dividendos import obter_dividendos_yahoo
 
 st.set_page_config(
-    page_title="BolsaIA V25 | Inteligência de Mercado",
+    page_title="BolsaIA V26 | Inteligência de Mercado",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -99,7 +99,7 @@ div[data-testid="stMetric"] { background:rgba(13,24,42,.82); border:1px solid rg
   <div class="brand-row">
     <img class="brand-logo" src="data:image/png;base64,LOGO_B64" />
     <div>
-      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V24</span></h1>
+      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V26</span></h1>
       <div class="tagline">Inteligência de mercado para análise técnica, radar e gestão de risco.</div>
       <div class="mini"><span class="chip">⚡ Scanner inteligente</span><span class="chip">📊 Análise técnica</span><span class="chip green">🛡️ Carteira simulada</span></div>
     </div>
@@ -117,7 +117,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 st.caption("Ferramenta educacional. Indicadores, scores e cenários são hipotéticos e não constituem recomendação de investimento.")
-st.caption("🧭 V25 · Painel de demonstração · Dados dependem da fonte configurada · Nenhuma ordem real é enviada")
+st.caption("🧭 V26 · Painel de demonstração · Dados dependem da fonte configurada · Nenhuma ordem real é enviada")
 
 # V15: status operacional, qualidade do dado e horário da última atualização.
 def _status_mercado():
@@ -144,11 +144,22 @@ else:
     st.info("Para ativar o realtime, configure BTG_API_KEY em Manage app → Settings → Secrets no Streamlit Cloud.")
 
 ativos = list(ATIVOS_B3.keys())
+SETOR_ATIVO = {
+    "PETR4":"Petróleo", "PRIO3":"Petróleo", "VALE3":"Mineração", "CSNA3":"Mineração", "CMIN3":"Mineração",
+    "ITUB4":"Bancos", "BBAS3":"Bancos", "BBDC4":"Bancos", "BBSE3":"Seguros", "B3SA3":"Serviços financeiros",
+    "CMIG3":"Energia", "CMIG4":"Energia", "ELET3":"Energia", "ELET6":"Energia", "CPLE6":"Energia", "CPFE3":"Energia", "TAEE11":"Energia",
+    "WEGE3":"Indústria", "EMBR3":"Indústria", "ABEV3":"Consumo", "MGLU3":"Varejo", "LREN3":"Varejo", "RENT3":"Transportes", "SUZB3":"Papel e celulose"
+}
+with st.expander("🧭 Filtro por setor", expanded=False):
+    setores = sorted(set(SETOR_ATIVO.values()))
+    setores_sel = st.multiselect("Setores", setores, default=setores)
+    ativos = [a for a in ativos if SETOR_ATIVO.get(a, "Outros") in setores_sel]
+
 col1, col2, col3, col4 = st.columns(4)
 with col1:
     selecionados = st.multiselect(
         "Ativos monitorados", ativos,
-        default=["PETR4", "VALE3", "ITUB4", "BBAS3", "BBDC4"],
+        default=["PETR4", "VALE3", "ITUB4", "BBAS3", "BBDC4", "CMIG4"],
     )
 with col2:
     intervalo = st.selectbox("Candles", ["1m", "5m", "15m", "30m", "1h"], index=1)
