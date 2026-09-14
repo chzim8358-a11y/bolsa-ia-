@@ -1,26 +1,19 @@
-# BolsaIA v12 — Radar + Carteira Simulada
+# BolsaIA v13 — Radar + Gestão de Risco
 
-Aplicativo educacional em Streamlit para análise técnica e acompanhamento de carteira simulada de ativos B3.
+Aplicativo educacional em Streamlit para análise técnica, acompanhamento de carteira simulada e dimensionamento hipotético de posição por risco.
 
-## Novidades da V12
-- Tudo da V11.
-- Painel consolidado de capital simulado, valor atual e P/L.
-- Dividendos dos ativos da carteira integrados ao resumo.
-- Resultado combinado de P/L + dividendos históricos de 12 meses.
-- Gráfico da evolução da carteira durante a sessão atual.
-- Exportação da carteira para CSV.
+## Novidades da V13
+- Gestão de risco configurável na barra lateral.
+- Risco máximo em reais por operação.
+- Limite de capital disponível para a simulação.
+- Stop e alvo técnicos exibidos no scanner.
+- Risco por ação e distância até o stop.
+- Quantidade hipotética limitada simultaneamente pelo risco e pelo capital disponível.
+- Calculadora de risco na análise detalhada.
 
 ## Mantido
-- Radar/ranking, Score técnico, alertas, candles, RSI, MACD, médias, alvo, stop, R/R e dividendos.
-- BTG como feed realtime opcional; Yahoo Finance como fallback.
+- Feed BTG realtime opcional e Yahoo Finance como fallback.
+- Scanner, Score técnico, ranking, alertas, candles, RSI, MACD, médias, suporte, resistência, ATR, R/R e dividendos.
+- Carteira simulada, histórico de alertas, evolução da carteira e exportação CSV.
 
-> Ferramenta educacional e de simulação. Não constitui recomendação de investimento nem envia ordens reais. Dividendos são históricos; o gráfico da carteira é somente da sessão atual.
-
-## Arquivos
-- `app.py`
-- `dados.py`
-- `indicadores.py`
-- `analisador.py`
-- `dividendos.py`
-- `requirements.txt`
-- `README.md`
+> Ferramenta educacional e de simulação. Não constitui recomendação de investimento e não envia ordens reais. Stop, alvo e quantidade são cálculos técnicos hipotéticos e não garantem resultados.

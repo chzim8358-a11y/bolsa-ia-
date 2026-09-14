@@ -9,8 +9,8 @@ from indicadores import calcular_indicadores
 from analisador import analisar, analisar_candles, calcular_plano
 from dividendos import obter_dividendos_yahoo
 
-st.set_page_config(page_title="BolsaIA v11", page_icon="🚀", layout="wide")
-st.title("🚀 BolsaIA v12 — Radar + Carteira Simulada")
+st.set_page_config(page_title="BolsaIA v13", page_icon="🚀", layout="wide")
+st.title("🚀 BolsaIA v13 — Radar + Gestão de Risco")
 st.caption("Motor educacional de análise técnica + acompanhamento de carteira simulada. Não é recomendação de investimento.")
 
 # V11: status operacional e horário da última atualização do painel.
@@ -50,6 +50,12 @@ with col3:
     st.metric("Atualização", "5 s")
 with col4:
     limiar = st.slider("Alerta a partir de", 50, 95, 75)
+
+# V13: parâmetros de gestão de risco para a simulação.
+with st.sidebar:
+    st.markdown("### 🛡️ Gestão de risco")
+    risco_reais = st.number_input("Risco máximo por operação (R$)", min_value=1.0, value=100.0, step=10.0)
+    capital_risco = st.number_input("Capital disponível (R$)", min_value=100.0, value=10000.0, step=500.0)
 
 
 def carregar_ativo(ticker, intervalo):
@@ -118,6 +124,10 @@ def painel():
             df, ultima, pontos, sinal, motivos, candle_leitura, candle_padroes = analisar_ativo(ticker)
             preco = realtime_prices.get(ticker, float(ultima["Close"]))
             plano_scan = calcular_plano(ultima, preco)
+            risco_pct = (plano_scan["risco_por_acao"] / preco * 100) if preco else None
+            qtd_risco = int(risco_reais / plano_scan["risco_por_acao"]) if plano_scan["risco_por_acao"] > 0 else 0
+            qtd_capital = int(capital_risco / preco) if preco else 0
+            qtd_sugerida = max(0, min(qtd_risco, qtd_capital))
             try:
                 div_scan = dividendos_atualizados(ticker)
                 dy_scan = ((div_scan.get("dividendos_12m") / preco) * 100) if preco and div_scan.get("dividendos_12m") is not None else None
@@ -137,12 +147,17 @@ def painel():
                 "Yield 12m": dy_scan,
                 "Variação": ((preco / float(df["Close"].iloc[-2]) - 1) * 100) if len(df) > 1 and float(df["Close"].iloc[-2]) else None,
                 "ATR %": ((float(ultima["ATR14"]) / preco) * 100) if preco and pd.notna(ultima["ATR14"]) else None,
+                "Stop": plano_scan["stop"],
+                "Alvo": plano_scan["alvo"],
+                "Risco/ação": plano_scan["risco_por_acao"],
+                "Dist. stop %": risco_pct,
+                "Qtd. risco": qtd_sugerida,
             })
             detalhes[ticker] = (df, ultima, pontos, sinal, motivos, preco, candle_leitura, candle_padroes)
         except Exception as e:
             resultados.append({
                 "Ativo": ticker, "Preço": None, "RSI": None, "MM20": None,
-                "MM50": None, "Volume": None, "Score": None, "Sinal": f"ERRO: {e}", "Candle": "ERRO", "R/R": None, "Yield 12m": None, "Variação": None, "ATR %": None,
+                "MM50": None, "Volume": None, "Score": None, "Sinal": f"ERRO: {e}", "Candle": "ERRO", "R/R": None, "Yield 12m": None, "Variação": None, "ATR %": None, "Stop": None, "Alvo": None, "Risco/ação": None, "Dist. stop %": None, "Qtd. risco": None,
             })
 
     tabela = pd.DataFrame(resultados)
@@ -169,8 +184,29 @@ def painel():
             "Yield 12m": st.column_config.NumberColumn(format="%.2f%%"),
             "Variação": st.column_config.NumberColumn(format="%.2f%%"),
             "ATR %": st.column_config.NumberColumn(format="%.2f%%"),
+            "Stop": st.column_config.NumberColumn(format="R$ %.2f"),
+            "Alvo": st.column_config.NumberColumn(format="R$ %.2f"),
+            "Risco/ação": st.column_config.NumberColumn(format="R$ %.2f"),
+            "Dist. stop %": st.column_config.NumberColumn(format="%.2f%%"),
+            "Qtd. risco": st.column_config.NumberColumn(format="%d"),
         },
     )
+
+    # V13: resumo de risco do scanner.
+    st.markdown("### 🛡️ Gestão de risco por ativo")
+    risco_view = tabela[["Ativo", "Preço", "Stop", "Alvo", "Risco/ação", "Dist. stop %", "Qtd. risco"]].dropna(subset=["Preço", "Stop", "Alvo"]).copy()
+    if not risco_view.empty:
+        st.dataframe(risco_view, use_container_width=True, hide_index=True, column_config={
+            "Preço": st.column_config.NumberColumn(format="R$ %.2f"),
+            "Stop": st.column_config.NumberColumn(format="R$ %.2f"),
+            "Alvo": st.column_config.NumberColumn(format="R$ %.2f"),
+            "Risco/ação": st.column_config.NumberColumn(format="R$ %.2f"),
+            "Dist. stop %": st.column_config.NumberColumn(format="%.2f%%"),
+            "Qtd. risco": st.column_config.NumberColumn(format="%d"),
+        })
+        st.caption(f"Cálculo educacional: a quantidade é limitada por R$ {risco_reais:,.2f} de risco por operação e por {capital_risco:,.2f} de capital disponível. Não é recomendação de tamanho de posição.".replace(",", "X").replace(".", ",").replace("X", "."))
+    else:
+        st.info("Sem dados suficientes para calcular o risco.")
 
     # Radar V9: ranking visual das melhores pontuações entre os ativos monitorados.
     st.markdown("### 🏆 Radar de Oportunidades")
@@ -208,7 +244,7 @@ def painel():
         hist_alertas["hora"] = hist_alertas["hora"].dt.strftime("%d/%m/%Y %H:%M:%S")
         st.dataframe(hist_alertas, use_container_width=True, hide_index=True, column_config={"preco": st.column_config.NumberColumn("Preço", format="R$ %.2f"), "score": st.column_config.NumberColumn("Score", format="%d/100")})
         csv_alertas = hist_alertas.to_csv(index=False).encode("utf-8")
-        st.download_button("⬇️ Exportar alertas CSV", csv_alertas, file_name="bolsaia_alertas_v12.csv", mime="text/csv")
+        st.download_button("⬇️ Exportar alertas CSV", csv_alertas, file_name="bolsaia_alertas_v13.csv", mime="text/csv")
     else:
         st.info("Nenhum alerta registrado nesta sessão ainda. O histórico começa quando um ativo atingir o limiar configurado.")
 
@@ -287,7 +323,7 @@ def painel():
             st.caption("A evolução é registrada somente durante esta sessão do app; ela não representa histórico de rentabilidade real.")
 
             csv_carteira = carteira_df.to_csv(index=False).encode("utf-8")
-            st.download_button("⬇️ Exportar carteira CSV", csv_carteira, file_name="bolsaia_carteira_v12.csv", mime="text/csv")
+            st.download_button("⬇️ Exportar carteira CSV", csv_carteira, file_name="bolsaia_carteira_v13.csv", mime="text/csv")
     else:
         st.info("Nenhuma posição simulada cadastrada.")
 
@@ -377,6 +413,19 @@ def painel():
         p3.metric("⚖️ Risco/Retorno", rr_txt)
         p4.metric("🧠 Confiança técnica", f"{pontos}/100")
         st.caption("Alvo e stop são níveis técnicos calculados a partir de suporte, resistência e ATR recente. A confiança é o Score técnico do modelo, não uma probabilidade estatística de alta ou queda.")
+
+        st.markdown("### 🛡️ Calculadora de risco")
+        rr1, rr2, rr3, rr4 = st.columns(4)
+        perda_unit = plano["risco_por_acao"]
+        qtd_risco_det = int(risco_reais / perda_unit) if perda_unit > 0 else 0
+        qtd_cap_det = int(capital_risco / preco) if preco else 0
+        qtd_final_det = max(0, min(qtd_risco_det, qtd_cap_det))
+        rr1.metric("Risco/ação", f"R$ {perda_unit:.2f}")
+        rr2.metric("Distância ao stop", f"{(perda_unit / preco * 100):.2f}%" if preco else "N/D")
+        rr3.metric("Qtd. pelo risco", f"{qtd_risco_det}")
+        rr4.metric("Qtd. final", f"{qtd_final_det}")
+        perda_max = qtd_final_det * perda_unit
+        st.caption(f"Se o stop técnico fosse atingido, a perda simulada nessa quantidade seria de aproximadamente R$ {perda_max:,.2f}. O cálculo é hipotético e não considera custos, impostos, slippage ou gaps.".replace(",", "X").replace(".", ",").replace("X", "."))
 
         st.markdown("### 🕯️ Gráfico de Candles")
         try:
