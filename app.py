@@ -9,9 +9,21 @@ from indicadores import calcular_indicadores
 from analisador import analisar, analisar_candles, calcular_plano
 from dividendos import obter_dividendos_yahoo
 
-st.set_page_config(page_title="BolsaIA v10", page_icon="🚀", layout="wide")
-st.title("🚀 BolsaIA v10 — Radar + Carteira Simulada")
+st.set_page_config(page_title="BolsaIA v11", page_icon="🚀", layout="wide")
+st.title("🚀 BolsaIA v11 — Radar + Carteira Simulada")
 st.caption("Motor educacional de análise técnica + acompanhamento de carteira simulada. Não é recomendação de investimento.")
+
+# V11: status operacional e horário da última atualização do painel.
+def _status_mercado():
+    agora = pd.Timestamp.now(tz="America/Sao_Paulo")
+    abre = agora.replace(hour=10, minute=0, second=0, microsecond=0)
+    fecha = agora.replace(hour=17, minute=55, second=0, microsecond=0)
+    if agora.weekday() < 5 and abre <= agora <= fecha:
+        return "🟢 Mercado B3 aberto", agora
+    return "⚪ Mercado B3 fechado", agora
+
+status_mercado, agora_status = _status_mercado()
+st.caption(f"{status_mercado} · Horário de Brasília: {agora_status.strftime('%d/%m/%Y %H:%M:%S')}")
 
 try:
     secrets = st.secrets
@@ -196,7 +208,7 @@ def painel():
         hist_alertas["hora"] = hist_alertas["hora"].dt.strftime("%d/%m/%Y %H:%M:%S")
         st.dataframe(hist_alertas, use_container_width=True, hide_index=True, column_config={"preco": st.column_config.NumberColumn("Preço", format="R$ %.2f"), "score": st.column_config.NumberColumn("Score", format="%d/100")})
         csv_alertas = hist_alertas.to_csv(index=False).encode("utf-8")
-        st.download_button("⬇️ Exportar alertas CSV", csv_alertas, file_name="bolsaia_alertas_v10.csv", mime="text/csv")
+        st.download_button("⬇️ Exportar alertas CSV", csv_alertas, file_name="bolsaia_alertas_v11.csv", mime="text/csv")
     else:
         st.info("Nenhum alerta registrado nesta sessão ainda. O histórico começa quando um ativo atingir o limiar configurado.")
 
@@ -246,7 +258,7 @@ def painel():
                 "Investido": st.column_config.NumberColumn(format="R$ %.2f"), "Valor atual": st.column_config.NumberColumn(format="R$ %.2f"),
                 "P/L": st.column_config.NumberColumn(format="R$ %.2f"), "P/L %": st.column_config.NumberColumn(format="%.2f%%")})
             csv_carteira = carteira_df.to_csv(index=False).encode("utf-8")
-            st.download_button("⬇️ Exportar carteira CSV", csv_carteira, file_name="bolsaia_carteira_v10.csv", mime="text/csv")
+            st.download_button("⬇️ Exportar carteira CSV", csv_carteira, file_name="bolsaia_carteira_v11.csv", mime="text/csv")
     else:
         st.info("Nenhuma posição simulada cadastrada.")
 
