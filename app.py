@@ -4,7 +4,7 @@ from dados import dados_reais, ATIVOS_B3
 from indicadores import calcular_indicadores
 from analisador import analisar
 
-st.set_page_config(page_title="BolsaIA v3", page_icon="📈", layout="wide")
+st.set_page_config(page_title="BolsaIA v4", page_icon="📈", layout="wide")
 st.title("📈 BolsaIA — monitor automático")
 st.caption("Protótipo educacional: o motor combina indicadores técnicos. Não é recomendação de investimento.")
 

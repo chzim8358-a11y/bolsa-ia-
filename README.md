@@ -1,4 +1,4 @@
-# BolsaIA v3 — Scanner automático
+# BolsaIA v4 — Scanner automático
 
 Protótipo Streamlit que monitora vários ativos da B3, calcula MM20, MM50, RSI e volume e gera um score/sinal técnico.
 
