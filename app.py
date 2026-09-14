@@ -12,13 +12,13 @@ from analisador import analisar, analisar_candles, calcular_plano
 from dividendos import obter_dividendos_yahoo
 
 st.set_page_config(
-    page_title="BolsaIA V28 | Inteligência de Mercado",
+    page_title="BolsaIA V29 | Inteligência de Mercado",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# V28 — identidade visual premium baseada na nova marca BolsaIA; foco em apresentação comercial.
+# V29 — identidade visual premium baseada na nova marca BolsaIA; foco em apresentação comercial.
 _logo_path = Path(__file__).with_name("logo.png")
 _logo_b64 = base64.b64encode(_logo_path.read_bytes()).decode("ascii") if _logo_path.exists() else ""
 _hero_html = """
@@ -92,17 +92,21 @@ div[data-testid="stMetric"] { background:rgba(13,24,42,.82); border:1px solid rg
 .trust-item b { display:block; color:#eaf3ff; font-size:.82rem; }
 .trust-item span { color:#8fa6c5; font-size:.72rem; }
 .quick-nav { display:grid; grid-template-columns:repeat(5,1fr); gap:.55rem; margin:.7rem 0 1rem; }
+.quick-link { display:flex; align-items:center; justify-content:center; min-height:46px; padding:.55rem .7rem; border-radius:11px; font-weight:800; text-decoration:none !important; color:#dbeafe !important; background:rgba(18,27,43,.92); border:1px solid rgba(105,180,255,.20); transition:transform .15s ease,border-color .15s ease,background .15s ease; }
+.quick-link:hover { transform:translateY(-1px); border-color:rgba(105,210,255,.55); background:rgba(24,39,62,.98); }
+.quick-link.primary { color:#8edcff !important; border-color:#164a72; background:#0c2038; }
+.quick-link.green { color:#7ee2a8 !important; border-color:#20573a; background:#0d281d; }
 .quick-nav-note { color:#8fa6c5; font-size:.75rem; margin:-.45rem 0 .7rem; }
 @media (max-width:700px) { .quick-nav { grid-template-columns:repeat(2,1fr); } }
 .footer { margin-top:1.8rem; padding:1rem 0 .2rem; border-top:1px solid rgba(255,255,255,.08); color:#71839b; font-size:.74rem; text-align:center; }
 @media (max-width:700px) { .trust-row { grid-template-columns:1fr; } }
 </style>
 
-<div class="hero">
+<div id="home-top" class="hero">
   <div class="brand-row">
     <img class="brand-logo" src="data:image/png;base64,LOGO_B64" />
     <div>
-      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V28</span></h1>
+      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V29</span></h1>
       <div class="tagline">Inteligência de mercado para análise técnica, radar e gestão de risco.</div>
       <div class="mini"><span class="chip">⚡ Scanner inteligente</span><span class="chip">📊 Análise técnica</span><span class="chip green">🛡️ Carteira simulada</span></div>
     </div>
@@ -119,9 +123,18 @@ if "logado" not in st.session_state:
     st.session_state.logado = False
 
 st.markdown("<div class='section'>🚀 Atalhos</div>", unsafe_allow_html=True)
-nav_cols = st.columns(5)
-nav_items = [("🏠 Início", "🏠 Início"), ("⚡ Scanner", "⚡ Scanner"), ("📊 Análise", "📊 Análise"), ("⚙️ Config", "⚙️ Config"), ("👤 Login", "👤 Login")]
-for col, (label, value) in zip(nav_cols, nav_items):
+st.markdown("""
+<div class="quick-nav">
+  <a class="quick-link" href="#home-top">🏠 Início</a>
+  <a class="quick-link primary" href="#scanner-section">⚡ Scanner</a>
+  <a class="quick-link" href="#analysis-section">📊 Análise</a>
+</div>
+""", unsafe_allow_html=True)
+nav_cols = st.columns(2)
+for col, label, value in [
+    (nav_cols[0], "⚙️ Config", "⚙️ Config"),
+    (nav_cols[1], "👤 Login", "👤 Login"),
+]:
     with col:
         if st.button(label, use_container_width=True, key=f"nav_{value}"):
             st.session_state.pagina = value
@@ -167,7 +180,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 st.caption("Ferramenta educacional. Indicadores, scores e cenários são hipotéticos e não constituem recomendação de investimento.")
-st.caption("🧭 V28 · Painel de demonstração · Preços dependem da fonte configurada · Nenhuma ordem real é enviada")
+st.caption("🧭 V29 · Painel de demonstração · Preços dependem da fonte configurada · Nenhuma ordem real é enviada")
 
 # V15: status operacional, qualidade do dado e horário da última atualização.
 def _status_mercado():
@@ -509,7 +522,7 @@ def painel():
   <div class="v27-bar"><div class="v27-fill" style="width:{score25}%"></div></div>
 </div>
 """, unsafe_allow_html=True)
-    st.markdown('<div class="section">🔎 Scanner de oportunidades</div>', unsafe_allow_html=True)
+    st.markdown('<div id="scanner-section"></div><div class="section">🔎 Scanner de oportunidades</div>', unsafe_allow_html=True)
     stamp = st.session_state.get("ultima_atualizacao_painel")
     if stamp is not None:
         st.caption(f"🕒 Última atualização dos dados do scanner: {stamp.strftime('%d/%m/%Y %H:%M:%S')} (Brasília) · ciclo automático de 5 s")
@@ -715,7 +728,7 @@ def painel():
             st.caption("A evolução é registrada somente durante esta sessão do app; ela não representa histórico de rentabilidade real.")
 
             csv_carteira = carteira_df.to_csv(index=False).encode("utf-8")
-            st.download_button("⬇️ Exportar carteira CSV", csv_carteira, file_name="bolsaia_carteira_v28.csv", mime="text/csv")
+            st.download_button("⬇️ Exportar carteira CSV", csv_carteira, file_name="bolsaia_carteira_v29.csv", mime="text/csv")
     else:
         st.info("Nenhuma posição simulada cadastrada.")
 
@@ -730,7 +743,7 @@ def painel():
             div = {'dividendo_cota': None, 'dividendos_12m': None, 'ultimo_dividendo': None, 'ultima_data': None, 'yield_12m': None}
             st.warning(f"Dividendos temporariamente indisponíveis: {e}")
 
-        st.markdown('<div class="section">💰 Dividendos</div>', unsafe_allow_html=True)
+        st.markdown('<div id="analysis-section"></div><div class="section">💰 Dividendos</div>', unsafe_allow_html=True)
         d1, d2, d3, d4 = st.columns(4)
         if div.get("dividendo_cota") is not None:
             d1.metric("Dividendo/cota", f"R$ {div['dividendo_cota']:.4f}")
