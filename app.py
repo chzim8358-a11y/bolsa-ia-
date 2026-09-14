@@ -10,13 +10,13 @@ from analisador import analisar, analisar_candles, calcular_plano
 from dividendos import obter_dividendos_yahoo
 
 st.set_page_config(
-    page_title="BolsaIA V18 | Inteligência de Mercado",
+    page_title="BolsaIA V19 | Inteligência de Mercado",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# V17 — identidade visual e apresentação para demonstrações/clientes.
+# V19 — identidade visual, contraste e apresentação para demonstrações/clientes.
 st.markdown("""
 <style>
     .stApp { background: linear-gradient(180deg, #f7f9fc 0%, #ffffff 42%); }
@@ -60,10 +60,28 @@ st.markdown("""
     .exec-label { color:#6b7280; font-size:.78rem; font-weight:650; text-transform:uppercase; letter-spacing:.04em; }
     .exec-value { font-size:1.55rem; font-weight:800; margin-top:.18rem; }
     .signal-pill { display:inline-block; padding:.28rem .7rem; border-radius:999px; font-weight:750; font-size:.8rem; background:#eef4ff; border:1px solid #d7e4ff; }
-    .reason { padding:.38rem .6rem; margin:.2rem 0; border-radius:9px; background:#f7f8fa; border:1px solid rgba(0,0,0,.05); }
+    .reason { padding:.38rem .6rem; margin:.2rem 0; border-radius:9px; background:#f7f8fa; border:1px solid rgba(0,0,0,.05); color:#172033; }
+    /* V19: contraste explícito para evitar texto branco em fundo claro. */
+    .stApp, .stApp p, .stApp label, .stApp [data-testid="stMarkdownContainer"], .stApp [data-testid="stCaptionContainer"] { color:#172033; }
+    .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6 { color:#101828; }
+    .stApp [data-testid="stMetricLabel"] { color:#667085 !important; }
+    .stApp [data-testid="stMetricValue"] { color:#101828 !important; }
+    .stApp [data-testid="stMetricDelta"] { color:#344054 !important; }
+    .stApp [data-testid="stDataFrame"] { color:#172033; }
+    .stApp input, .stApp textarea { color:#172033 !important; }
+    .stApp [data-baseweb="select"] * { color:#172033 !important; }
+    .stApp [data-baseweb="slider"] { color:#172033; }
+    .stApp .stAlert p { color:inherit !important; }
+    @media (max-width: 700px) {
+        .block-container { padding: .75rem .65rem 2rem; }
+        .hero { padding: 1rem; border-radius: 14px; }
+        .hero h1 { font-size: 1.65rem; }
+        .section { font-size: 1rem; }
+        div[data-testid="stMetric"] { padding: .55rem .6rem; }
+    }
 </style>
 <div class="hero">
-    <h1>📈 BolsaIA <span style="font-size:.55em;">V17</span></h1>
+    <h1>📈 BolsaIA <span style="font-size:.55em;">V19</span></h1>
     <p>Inteligência de mercado para análise técnica, radar de oportunidades e gestão de risco.</p>
     <span class="badge">● Modo demonstração · Sem envio de ordens</span>
 </div>
@@ -346,7 +364,7 @@ def painel():
     )
 
     csv_scanner = tabela.to_csv(index=False).encode("utf-8")
-    st.download_button("⬇️ Exportar scanner CSV", csv_scanner, file_name="bolsaia_scanner_v18.csv", mime="text/csv", key="export_scanner_v18")
+    st.download_button("⬇️ Exportar scanner CSV", csv_scanner, file_name="bolsaia_scanner_v19.csv", mime="text/csv", key="export_scanner_v19")
 
     # V13: resumo de risco do scanner.
     st.markdown('<div class="section">🛡️ Gestão de risco por ativo</div>', unsafe_allow_html=True)
@@ -376,7 +394,7 @@ def painel():
 
     # V17: snapshot completo para auditoria da sessão.
     csv_snapshot = tabela.to_csv(index=False).encode("utf-8")
-    st.download_button("⬇️ Exportar snapshot completo CSV", csv_snapshot, file_name="bolsaia_snapshot_v18.csv", mime="text/csv", key="export_snapshot_v18")
+    st.download_button("⬇️ Exportar snapshot completo CSV", csv_snapshot, file_name="bolsaia_snapshot_v19.csv", mime="text/csv", key="export_snapshot_v19")
 
     # Radar V9: ranking visual das melhores pontuações entre os ativos monitorados.
     st.markdown('<div class="section">🏆 Radar de Oportunidades</div>', unsafe_allow_html=True)
@@ -510,7 +528,7 @@ def painel():
             st.caption("A evolução é registrada somente durante esta sessão do app; ela não representa histórico de rentabilidade real.")
 
             csv_carteira = carteira_df.to_csv(index=False).encode("utf-8")
-            st.download_button("⬇️ Exportar carteira CSV", csv_carteira, file_name="bolsaia_carteira_v18.csv", mime="text/csv")
+            st.download_button("⬇️ Exportar carteira CSV", csv_carteira, file_name="bolsaia_carteira_v19.csv", mime="text/csv")
     else:
         st.info("Nenhuma posição simulada cadastrada.")
 
