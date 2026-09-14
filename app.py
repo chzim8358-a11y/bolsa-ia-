@@ -9,9 +9,57 @@ from indicadores import calcular_indicadores
 from analisador import analisar, analisar_candles, calcular_plano
 from dividendos import obter_dividendos_yahoo
 
-st.set_page_config(page_title="BolsaIA v16", page_icon="🚀", layout="wide")
-st.title("🚀 BolsaIA v16 — Radar + Gestão de Risco")
-st.caption("Motor educacional de análise técnica + acompanhamento de carteira simulada. Não é recomendação de investimento.")
+st.set_page_config(
+    page_title="BolsaIA V17 | Inteligência de Mercado",
+    page_icon="📈",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+# V17 — identidade visual e apresentação para demonstrações/clientes.
+st.markdown("""
+<style>
+    .stApp { background: linear-gradient(180deg, #f7f9fc 0%, #ffffff 42%); }
+    .block-container { max-width: 1450px; padding-top: 1.2rem; padding-bottom: 3rem; }
+    [data-testid="stSidebar"] { border-right: 1px solid rgba(0,0,0,.08); }
+    .hero {
+        padding: 1.35rem 1.5rem;
+        border: 1px solid rgba(0,0,0,.08);
+        border-radius: 18px;
+        background: linear-gradient(135deg, #ffffff 0%, #eef4ff 100%);
+        box-shadow: 0 8px 28px rgba(20,40,80,.07);
+        margin-bottom: 1rem;
+    }
+    .hero h1 { margin: 0; font-size: 2.15rem; letter-spacing: -.04em; }
+    .hero p { margin: .35rem 0 0; color: #5f6b7a; }
+    .section {
+        font-size: 1.08rem; font-weight: 700; margin-top: 1.15rem;
+        padding: .35rem 0; border-bottom: 1px solid rgba(0,0,0,.08);
+    }
+    .badge {
+        display:inline-block; padding:.25rem .65rem; border-radius:999px;
+        font-size:.78rem; font-weight:700; background:#eaf7ef;
+        border:1px solid #ccebd7; margin-top:.7rem;
+    }
+    .muted { color:#6b7280; font-size:.84rem; }
+    div[data-testid="stMetric"] {
+        background: rgba(255,255,255,.82);
+        border: 1px solid rgba(0,0,0,.07);
+        border-radius: 14px;
+        padding: .65rem .8rem;
+    }
+    .stButton > button, .stDownloadButton > button {
+        border-radius: 10px;
+        font-weight: 650;
+    }
+</style>
+<div class="hero">
+    <h1>📈 BolsaIA <span style="font-size:.55em;">V17</span></h1>
+    <p>Inteligência de mercado para análise técnica, radar de oportunidades e gestão de risco.</p>
+    <span class="badge">● Modo demonstração · Sem envio de ordens</span>
+</div>
+""", unsafe_allow_html=True)
+st.caption("Ferramenta educacional. Indicadores, scores e cenários são hipotéticos e não constituem recomendação de investimento.")
 
 # V15: status operacional, qualidade do dado e horário da última atualização.
 def _status_mercado():
@@ -207,7 +255,7 @@ def painel():
 
     tabela = pd.DataFrame(resultados)
 
-    # V16: variação do Score entre ciclos para detectar aceleração ou perda de força.
+    # V17: variação do Score entre ciclos para detectar aceleração ou perda de força.
     scores_anteriores = st.session_state.get("ultimos_scores", {})
     if not tabela.empty:
         tabela["Δ Score"] = tabela.apply(
@@ -230,7 +278,7 @@ def painel():
     if mudancas:
         st.warning("🔔 Mudança de sinal: " + " · ".join(mudancas))
 
-    st.subheader("🔎 Scanner de oportunidades")
+    st.markdown('<div class="section">🔎 Scanner de oportunidades</div>', unsafe_allow_html=True)
     stamp = st.session_state.get("ultima_atualizacao_painel")
     if stamp is not None:
         st.caption(f"🕒 Última atualização dos dados do scanner: {stamp.strftime('%d/%m/%Y %H:%M:%S')} (Brasília) · ciclo automático de 5 s")
@@ -270,10 +318,10 @@ def painel():
     )
 
     csv_scanner = tabela.to_csv(index=False).encode("utf-8")
-    st.download_button("⬇️ Exportar scanner CSV", csv_scanner, file_name="bolsaia_scanner_v16.csv", mime="text/csv", key="export_scanner_v16")
+    st.download_button("⬇️ Exportar scanner CSV", csv_scanner, file_name="bolsaia_scanner_v17.csv", mime="text/csv", key="export_scanner_v17")
 
     # V13: resumo de risco do scanner.
-    st.markdown("### 🛡️ Gestão de risco por ativo")
+    st.markdown('<div class="section">🛡️ Gestão de risco por ativo</div>', unsafe_allow_html=True)
     risco_view = tabela[["Ativo", "Preço", "Stop", "Alvo", "Risco/ação", "Dist. stop %", "Qtd. risco"]].dropna(subset=["Preço", "Stop", "Alvo"]).copy()
     if not risco_view.empty:
         st.dataframe(risco_view, use_container_width=True, hide_index=True, column_config={
@@ -288,7 +336,7 @@ def painel():
     else:
         st.info("Sem dados suficientes para calcular o risco.")
 
-    # V16: risco agregado das quantidades simuladas sugeridas pelo scanner.
+    # V17: risco agregado das quantidades simuladas sugeridas pelo scanner.
     try:
         risco_agregado = float((tabela["Qtd. risco"].fillna(0) * tabela["Risco/ação"].fillna(0)).sum())
     except Exception:
@@ -298,12 +346,12 @@ def painel():
     else:
         st.info(f"🛡️ Risco agregado potencial do scanner: R$ {risco_agregado:,.2f} / R$ {risco_total_max:,.2f}.".replace(",", "X").replace(".", ",").replace("X", "."))
 
-    # V16: snapshot completo para auditoria da sessão.
+    # V17: snapshot completo para auditoria da sessão.
     csv_snapshot = tabela.to_csv(index=False).encode("utf-8")
-    st.download_button("⬇️ Exportar snapshot completo CSV", csv_snapshot, file_name="bolsaia_snapshot_v16.csv", mime="text/csv", key="export_snapshot_v16")
+    st.download_button("⬇️ Exportar snapshot completo CSV", csv_snapshot, file_name="bolsaia_snapshot_v17.csv", mime="text/csv", key="export_snapshot_v17")
 
     # Radar V9: ranking visual das melhores pontuações entre os ativos monitorados.
-    st.markdown("### 🏆 Radar de Oportunidades")
+    st.markdown('<div class="section">🏆 Radar de Oportunidades</div>', unsafe_allow_html=True)
     ranking = tabela.dropna(subset=["Score"]).sort_values(["Score", "R/R"], ascending=[False, False]).reset_index(drop=True)
     if ranking.empty:
         st.info("Ainda não há dados suficientes para montar o radar.")
@@ -332,18 +380,18 @@ def painel():
             st.session_state.historico_alertas.append({"hora": agora, "ativo": r["Ativo"], "score": int(r["Score"]), "sinal": r["Sinal"], "preco": r["Preço"], "chave": chave})
     st.session_state.historico_alertas = st.session_state.historico_alertas[-50:]
 
-    st.markdown("### 🔔 Histórico de alertas")
+    st.markdown('<div class="section">🔔 Histórico de alertas</div>', unsafe_allow_html=True)
     if st.session_state.historico_alertas:
         hist_alertas = pd.DataFrame(st.session_state.historico_alertas)[["hora", "ativo", "score", "sinal", "preco"]].sort_values("hora", ascending=False)
         hist_alertas["hora"] = hist_alertas["hora"].dt.strftime("%d/%m/%Y %H:%M:%S")
         st.dataframe(hist_alertas, use_container_width=True, hide_index=True, column_config={"preco": st.column_config.NumberColumn("Preço", format="R$ %.2f"), "score": st.column_config.NumberColumn("Score", format="%d/100")})
         csv_alertas = hist_alertas.to_csv(index=False).encode("utf-8")
-        st.download_button("⬇️ Exportar alertas CSV", csv_alertas, file_name="bolsaia_alertas_v16.csv", mime="text/csv")
+        st.download_button("⬇️ Exportar alertas CSV", csv_alertas, file_name="bolsaia_alertas_v17.csv", mime="text/csv")
     else:
         st.info("Nenhum alerta registrado nesta sessão ainda. O histórico começa quando um ativo atingir o limiar configurado.")
 
     # V10: carteira virtual, sem envio de ordens e sem conexão com corretora.
-    st.markdown("### 💼 Carteira simulada")
+    st.markdown('<div class="section">💼 Carteira simulada</div>', unsafe_allow_html=True)
     st.caption("A carteira é apenas uma simulação local desta sessão. Nenhuma ordem real é enviada.")
     if "carteira" not in st.session_state:
         st.session_state.carteira = {}
@@ -431,7 +479,7 @@ def painel():
             st.caption("A evolução é registrada somente durante esta sessão do app; ela não representa histórico de rentabilidade real.")
 
             csv_carteira = carteira_df.to_csv(index=False).encode("utf-8")
-            st.download_button("⬇️ Exportar carteira CSV", csv_carteira, file_name="bolsaia_carteira_v15.csv", mime="text/csv")
+            st.download_button("⬇️ Exportar carteira CSV", csv_carteira, file_name="bolsaia_carteira_v17.csv", mime="text/csv")
     else:
         st.info("Nenhuma posição simulada cadastrada.")
 
@@ -446,7 +494,7 @@ def painel():
             div = {'dividendo_cota': None, 'dividendos_12m': None, 'ultimo_dividendo': None, 'ultima_data': None, 'yield_12m': None}
             st.warning(f"Dividendos temporariamente indisponíveis: {e}")
 
-        st.markdown("## 💰 Dividendos")
+        st.markdown('<div class="section">💰 Dividendos</div>', unsafe_allow_html=True)
         d1, d2, d3, d4 = st.columns(4)
         if div.get("dividendo_cota") is not None:
             d1.metric("Dividendo/cota", f"R$ {div['dividendo_cota']:.4f}")
