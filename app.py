@@ -3,10 +3,11 @@ import pandas as pd
 
 from dados import (
     dados_yahoo, dados_btg_realtime, cotacoes_btg, btg_disponivel,
-    ATIVOS_B3, dividendos_yahoo,
+    ATIVOS_B3,
 )
 from indicadores import calcular_indicadores
 from analisador import analisar
+from dividendos import obter_dividendos_yahoo
 
 st.set_page_config(page_title="BolsaIA v6", page_icon="📡", layout="wide")
 st.title("📡 BolsaIA v6 — análise B3 em tempo real")
@@ -77,6 +78,11 @@ def normalizar_cotacao_df(df):
     return out
 
 
+@st.cache_data(ttl=60, show_spinner=False)
+def dividendos_atualizados(ticker):
+    return obter_dividendos_yahoo(ticker)
+
+
 def painel():
     if not selecionados:
         st.info("Escolha pelo menos um ativo.")
@@ -84,7 +90,6 @@ def painel():
 
     resultados = []
     detalhes = {}
-    dividend_data = {}
     realtime_prices = {}
     if usar_btg:
         try:
@@ -96,9 +101,6 @@ def painel():
         try:
             df, ultima, pontos, sinal, motivos = analisar_ativo(ticker)
             preco = realtime_prices.get(ticker, float(ultima["Close"]))
-            # Atualiza os dados de dividendos junto do painel. O refresh do Streamlit
-            # ocorre a cada 5s; a fonte só muda quando há novo evento de dividendos.
-            dividend_data[ticker] = dividendos_yahoo(ticker)
             resultados.append({
                 "Ativo": ticker,
                 "Preço": preco,
@@ -108,16 +110,12 @@ def painel():
                 "Volume": float(ultima["Volume"]),
                 "Score": pontos,
                 "Sinal": sinal,
-                "Dividendo/cota": dividend_data[ticker].get("Dividendo/cota"),
-                "Dividendos 12m": dividend_data[ticker].get("Dividendos 12m"),
-                "Yield": dividend_data[ticker].get("Yield"),
             })
             detalhes[ticker] = (df, ultima, pontos, sinal, motivos, preco)
         except Exception as e:
             resultados.append({
                 "Ativo": ticker, "Preço": None, "RSI": None, "MM20": None,
                 "MM50": None, "Volume": None, "Score": None, "Sinal": f"ERRO: {e}",
-                "Dividendo/cota": None, "Dividendos 12m": None, "Yield": None,
             })
 
     tabela = pd.DataFrame(resultados)
@@ -139,9 +137,6 @@ def painel():
             "MM50": st.column_config.NumberColumn(format="R$ %.2f"),
             "Volume": st.column_config.NumberColumn(format="%.0f"),
             "Score": st.column_config.NumberColumn(format="%d/100"),
-            "Dividendo/cota": st.column_config.NumberColumn(format="R$ %.4f"),
-            "Dividendos 12m": st.column_config.NumberColumn(format="R$ %.4f"),
-            "Yield": st.column_config.NumberColumn(format="%.2f%%"),
         },
     )
 
@@ -149,14 +144,34 @@ def painel():
     if disponiveis:
         ativo = st.selectbox("Ver análise detalhada", disponiveis)
         df, ultima, pontos, sinal, motivos, preco = detalhes[ativo]
-        div = dividend_data.get(ativo, {})
-        st.subheader("💰 Dividendos")
+        try:
+            div = dividendos_atualizados(ativo)
+        except Exception as e:
+            div = {'dividendo_cota': None, 'dividendos_12m': None, 'ultimo_dividendo': None, 'ultima_data': None, 'yield_12m': None}
+            st.warning(f"Dividendos temporariamente indisponíveis: {e}")
+
+        st.markdown("## 💰 Dividendos")
         d1, d2, d3, d4 = st.columns(4)
-        d1.metric("Dividendo/cota", f"R$ {div['Dividendo/cota']:.4f}" if div.get("Dividendo/cota") is not None else "N/D")
-        d2.metric("Dividendos 12 meses", f"R$ {div['Dividendos 12m']:.4f}" if div.get("Dividendos 12m") is not None else "N/D")
-        d3.metric("Dividend Yield", f"{div['Yield']:.2f}%" if div.get("Yield") is not None else "N/D")
-        d4.metric("Último dividendo", f"R$ {div['Último dividendo']:.4f}" if div.get("Último dividendo") is not None else "N/D")
-        st.caption("🔄 Dividendos são atualizados a cada ciclo do painel; eles não variam a cada segundo como a cotação.")
+        if div.get("dividendo_cota") is not None:
+            d1.metric("Dividendo/cota", f"R$ {div['dividendo_cota']:.4f}")
+        else:
+            d1.metric("Dividendo/cota", "N/D")
+        if div.get("dividendos_12m") is not None:
+            d2.metric("Dividendos 12 meses", f"R$ {div['dividendos_12m']:.4f}")
+        else:
+            d2.metric("Dividendos 12 meses", "N/D")
+        if preco and div.get("dividendos_12m") is not None:
+            dy = (div["dividendos_12m"] / preco) * 100
+            d3.metric("Dividend Yield", f"{dy:.2f}%")
+        else:
+            d3.metric("Dividend Yield", "N/D")
+        if div.get("ultima_data") is not None:
+            data_ult = pd.Timestamp(div["ultima_data"]).strftime("%d/%m/%Y")
+            d4.metric("Último dividendo", f"R$ {div['ultimo_dividendo']:.4f}", help=f"Data registrada: {data_ult}")
+        else:
+            d4.metric("Último dividendo", "N/D")
+        st.caption("🔄 Dividendos: fonte Yahoo Finance, atualização automática a cada 60 s. Preço/cotação continua no ciclo realtime de 5 s.")
+
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("Preço realtime", f"R$ {preco:.2f}")
         c2.metric("RSI", f"{ultima.RSI:.1f}")
