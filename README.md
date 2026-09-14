@@ -1,4 +1,4 @@
-# BolsaIA v6 — B3 em tempo real
+# BolsaIA v5 — B3 em tempo real
 
 Evolução da v4 para uma arquitetura preparada para **Market Data B3 em tempo real**.
 
@@ -10,8 +10,6 @@ Evolução da v4 para uma arquitetura preparada para **Market Data B3 em tempo r
 - Cotações em lote para reduzir chamadas.
 - Histórico intraday complementar para manter MM20/MM50 utilizáveis.
 - RSI, MM20, MM50, volume, score e alertas continuam na aplicação.
-- Novo painel de dividendos: dividendos por ação dos últimos 12 meses e último dividendo por cota.
-- Dividendos usam Yahoo Finance como referência e não são feed realtime.
 
 A documentação oficial do BTG descreve `Quotes.get_quote(..., mode="realtime")` e `IntradayCandles.get_intraday_candles(..., delay="realtime")` para dados B3. O acesso real depende da chave/plano contratado.
 

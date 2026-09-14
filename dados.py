@@ -155,19 +155,47 @@ def cotacoes_btg(tickers, secrets=None) -> pd.DataFrame:
     return df
 
 
-def dividendos_yahoo(ticker: str) -> dict:
-    """Referência de dividendos por ação usando o histórico do Yahoo Finance."""
+def dividendos_yahoo(ticker: str):
+    """Dados de dividendos atualizados periodicamente via Yahoo Finance.
+    Dividendos não são uma cotação de mercado: mudam quando há anúncio/pagamento.
+    """
     simbolo = ATIVOS_B3.get(ticker, ticker if ticker.endswith(".SA") else f"{ticker}.SA")
     try:
-        hist = yf.Ticker(simbolo).dividends
-        if hist is None or hist.empty:
-            return {"dividendo_12m": 0.0, "ultimo_dividendo": 0.0, "data_ultimo": None}
-        hist = pd.to_numeric(hist, errors="coerce").dropna()
-        if hist.empty:
-            return {"dividendo_12m": 0.0, "ultimo_dividendo": 0.0, "data_ultimo": None}
-        idx = pd.to_datetime(hist.index, errors="coerce")
-        hist.index = idx.tz_localize(None) if getattr(idx, "tz", None) is not None else idx
-        inicio = pd.Timestamp.now() - pd.Timedelta(days=365)
-        return {"dividendo_12m": float(hist[hist.index >= inicio].sum()), "ultimo_dividendo": float(hist.iloc[-1]), "data_ultimo": hist.index[-1].strftime("%d/%m/%Y")}
+        tk = yf.Ticker(simbolo)
+        info = getattr(tk, "info", {}) or {}
+        dividend_rate = info.get("dividendRate")
+        dividend_yield = info.get("dividendYield")
+        last_dividend = info.get("lastDividendValue")
+        last_date = info.get("lastDividendDate")
+        if last_date:
+            try:
+                last_date = pd.to_datetime(last_date, unit="s").date()
+            except Exception:
+                pass
+
+        # Soma dos dividendos/JCP dos últimos 12 meses, usando histórico quando disponível.
+        total_12m = None
+        try:
+            div = tk.dividends
+            if div is not None and not div.empty:
+                div.index = pd.to_datetime(div.index)
+                cutoff = pd.Timestamp.now(tz=div.index.tz) - pd.Timedelta(days=365) if getattr(div.index, "tz", None) else pd.Timestamp.now() - pd.Timedelta(days=365)
+                total_12m = float(div[div.index >= cutoff].sum())
+        except Exception:
+            pass
+
+        if dividend_rate is None and total_12m is not None:
+            dividend_rate = total_12m
+
+        return {
+            "Dividendo/cota": float(dividend_rate) if dividend_rate is not None else None,
+            "Último dividendo": float(last_dividend) if last_dividend is not None else None,
+            "Dividendos 12m": total_12m,
+            "Yield": float(dividend_yield * 100) if dividend_yield is not None else None,
+            "Data último": last_date,
+        }
     except Exception:
-        return {"dividendo_12m": 0.0, "ultimo_dividendo": 0.0, "data_ultimo": None}
+        return {
+            "Dividendo/cota": None, "Último dividendo": None,
+            "Dividendos 12m": None, "Yield": None, "Data último": None,
+        }

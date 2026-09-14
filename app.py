@@ -84,8 +84,8 @@ def painel():
 
     resultados = []
     detalhes = {}
+    dividend_data = {}
     realtime_prices = {}
-    dividendos = {ticker: dividendos_yahoo(ticker) for ticker in selecionados}
     if usar_btg:
         try:
             realtime_prices = normalizar_cotacao_df(cotacoes_btg(selecionados, secrets=secrets))
@@ -96,6 +96,9 @@ def painel():
         try:
             df, ultima, pontos, sinal, motivos = analisar_ativo(ticker)
             preco = realtime_prices.get(ticker, float(ultima["Close"]))
+            # Atualiza os dados de dividendos junto do painel. O refresh do Streamlit
+            # ocorre a cada 5s; a fonte só muda quando há novo evento de dividendos.
+            dividend_data[ticker] = dividendos_yahoo(ticker)
             resultados.append({
                 "Ativo": ticker,
                 "Preço": preco,
@@ -105,15 +108,16 @@ def painel():
                 "Volume": float(ultima["Volume"]),
                 "Score": pontos,
                 "Sinal": sinal,
-                "Dividendo 12m/cota": dividendos.get(ticker, {}).get("dividendo_12m", 0.0),
-                "Último dividendo/cota": dividendos.get(ticker, {}).get("ultimo_dividendo", 0.0),
+                "Dividendo/cota": dividend_data[ticker].get("Dividendo/cota"),
+                "Dividendos 12m": dividend_data[ticker].get("Dividendos 12m"),
+                "Yield": dividend_data[ticker].get("Yield"),
             })
             detalhes[ticker] = (df, ultima, pontos, sinal, motivos, preco)
         except Exception as e:
             resultados.append({
                 "Ativo": ticker, "Preço": None, "RSI": None, "MM20": None,
                 "MM50": None, "Volume": None, "Score": None, "Sinal": f"ERRO: {e}",
-                "Dividendo 12m/cota": None, "Último dividendo/cota": None,
+                "Dividendo/cota": None, "Dividendos 12m": None, "Yield": None,
             })
 
     tabela = pd.DataFrame(resultados)
@@ -135,8 +139,9 @@ def painel():
             "MM50": st.column_config.NumberColumn(format="R$ %.2f"),
             "Volume": st.column_config.NumberColumn(format="%.0f"),
             "Score": st.column_config.NumberColumn(format="%d/100"),
-            "Dividendo 12m/cota": st.column_config.NumberColumn(format="R$ %.4f"),
-            "Último dividendo/cota": st.column_config.NumberColumn(format="R$ %.4f"),
+            "Dividendo/cota": st.column_config.NumberColumn(format="R$ %.4f"),
+            "Dividendos 12m": st.column_config.NumberColumn(format="R$ %.4f"),
+            "Yield": st.column_config.NumberColumn(format="%.2f%%"),
         },
     )
 
@@ -144,16 +149,19 @@ def painel():
     if disponiveis:
         ativo = st.selectbox("Ver análise detalhada", disponiveis)
         df, ultima, pontos, sinal, motivos, preco = detalhes[ativo]
-        c1, c2, c3, c4, c5, c6 = st.columns(6)
+        div = dividend_data.get(ativo, {})
+        st.subheader("💰 Dividendos")
+        d1, d2, d3, d4 = st.columns(4)
+        d1.metric("Dividendo/cota", f"R$ {div['Dividendo/cota']:.4f}" if div.get("Dividendo/cota") is not None else "N/D")
+        d2.metric("Dividendos 12 meses", f"R$ {div['Dividendos 12m']:.4f}" if div.get("Dividendos 12m") is not None else "N/D")
+        d3.metric("Dividend Yield", f"{div['Yield']:.2f}%" if div.get("Yield") is not None else "N/D")
+        d4.metric("Último dividendo", f"R$ {div['Último dividendo']:.4f}" if div.get("Último dividendo") is not None else "N/D")
+        st.caption("🔄 Dividendos são atualizados a cada ciclo do painel; eles não variam a cada segundo como a cotação.")
+        c1, c2, c3, c4 = st.columns(4)
         c1.metric("Preço realtime", f"R$ {preco:.2f}")
         c2.metric("RSI", f"{ultima.RSI:.1f}")
         c3.metric("Score", f"{pontos}/100")
         c4.metric("Sinal", sinal)
-        div = dividendos.get(ativo, {})
-        c5.metric("Dividendo 12m/cota", f"R$ {div.get('dividendo_12m', 0):.4f}")
-        c6.metric("Último dividendo/cota", f"R$ {div.get('ultimo_dividendo', 0):.4f}")
-        if div.get("data_ultimo"):
-            st.caption(f"Último pagamento registrado: {div['data_ultimo']} • Fonte: Yahoo Finance")
         st.line_chart(df[["Close", "MM20", "MM50"]].dropna())
         st.write("**Motivos do sinal:**")
         for m in motivos:
