@@ -12,13 +12,13 @@ from analisador import analisar, analisar_candles, calcular_plano
 from dividendos import obter_dividendos_yahoo
 
 st.set_page_config(
-    page_title="BolsaIA V27 | Inteligência de Mercado",
+    page_title="BolsaIA V28 | Inteligência de Mercado",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# V27 — identidade visual premium baseada na nova marca BolsaIA; foco em apresentação comercial.
+# V28 — identidade visual premium baseada na nova marca BolsaIA; foco em apresentação comercial.
 _logo_path = Path(__file__).with_name("logo.png")
 _logo_b64 = base64.b64encode(_logo_path.read_bytes()).decode("ascii") if _logo_path.exists() else ""
 _hero_html = """
@@ -91,6 +91,9 @@ div[data-testid="stMetric"] { background:rgba(13,24,42,.82); border:1px solid rg
 .trust-item { padding:.7rem .8rem; border-radius:12px; background:rgba(255,255,255,.025); border:1px solid rgba(255,255,255,.07); }
 .trust-item b { display:block; color:#eaf3ff; font-size:.82rem; }
 .trust-item span { color:#8fa6c5; font-size:.72rem; }
+.quick-nav { display:grid; grid-template-columns:repeat(5,1fr); gap:.55rem; margin:.7rem 0 1rem; }
+.quick-nav-note { color:#8fa6c5; font-size:.75rem; margin:-.45rem 0 .7rem; }
+@media (max-width:700px) { .quick-nav { grid-template-columns:repeat(2,1fr); } }
 .footer { margin-top:1.8rem; padding:1rem 0 .2rem; border-top:1px solid rgba(255,255,255,.08); color:#71839b; font-size:.74rem; text-align:center; }
 @media (max-width:700px) { .trust-row { grid-template-columns:1fr; } }
 </style>
@@ -99,7 +102,7 @@ div[data-testid="stMetric"] { background:rgba(13,24,42,.82); border:1px solid rg
   <div class="brand-row">
     <img class="brand-logo" src="data:image/png;base64,LOGO_B64" />
     <div>
-      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V27</span></h1>
+      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V28</span></h1>
       <div class="tagline">Inteligência de mercado para análise técnica, radar e gestão de risco.</div>
       <div class="mini"><span class="chip">⚡ Scanner inteligente</span><span class="chip">📊 Análise técnica</span><span class="chip green">🛡️ Carteira simulada</span></div>
     </div>
@@ -108,6 +111,53 @@ div[data-testid="stMetric"] { background:rgba(13,24,42,.82); border:1px solid rg
 """
 _hero_html = _hero_html.replace("LOGO_B64", _logo_b64)
 st.markdown(_hero_html, unsafe_allow_html=True)
+
+# V28: atalhos de navegação simples e visíveis para iniciantes.
+if "pagina" not in st.session_state:
+    st.session_state.pagina = "🏠 Início"
+if "logado" not in st.session_state:
+    st.session_state.logado = False
+
+st.markdown("<div class='section'>🚀 Atalhos</div>", unsafe_allow_html=True)
+nav_cols = st.columns(5)
+nav_items = [("🏠 Início", "🏠 Início"), ("⚡ Scanner", "⚡ Scanner"), ("📊 Análise", "📊 Análise"), ("⚙️ Config", "⚙️ Config"), ("👤 Login", "👤 Login")]
+for col, (label, value) in zip(nav_cols, nav_items):
+    with col:
+        if st.button(label, use_container_width=True, key=f"nav_{value}"):
+            st.session_state.pagina = value
+            st.rerun()
+
+if st.session_state.pagina == "👤 Login":
+    st.markdown("<div class='section'>👤 Área do usuário</div>", unsafe_allow_html=True)
+    st.info("🔐 Login demonstrativo da V28. O acesso é local à sessão nesta versão; ainda não há autenticação externa nem banco de usuários.")
+    if not st.session_state.logado:
+        with st.form("login_v28"):
+            email = st.text_input("E-mail", placeholder="voce@exemplo.com")
+            senha = st.text_input("Senha", type="password", placeholder="••••••••")
+            entrar = st.form_submit_button("🚀 Entrar", use_container_width=True)
+        if entrar:
+            if email.strip() and senha:
+                st.session_state.logado = True
+                st.session_state.usuario = email.strip()
+                st.success(f"🟢 Sessão demonstrativa iniciada para {email.strip()}.")
+            else:
+                st.error("Preencha e-mail e senha para continuar.")
+    else:
+        st.success(f"🟢 Sessão ativa: {st.session_state.get('usuario', 'usuário')}")
+        if st.button("Sair", key="logout_v28"):
+            st.session_state.logado = False
+            st.session_state.pop("usuario", None)
+            st.rerun()
+    st.stop()
+
+if st.session_state.pagina == "⚙️ Config":
+    st.markdown("<div class='section'>⚙️ Configurações rápidas</div>", unsafe_allow_html=True)
+    st.write("**Feed principal:**", "BTG realtime" if btg_disponivel(st.secrets if hasattr(st, "secrets") else None) else "Yahoo Finance fallback")
+    st.write("**Ciclo do scanner:** 5 segundos")
+    st.write("**Universo:** ações B3 + FIIs / imobiliário")
+    st.info("💡 Para cotações de ações B3 mais próximas do tempo real, configure BTG_API_KEY nos Secrets do Streamlit Cloud. O Yahoo Finance permanece como fallback e pode ter atraso.")
+    st.stop()
+
 st.markdown("""
 <div class="client-strip"><span><strong>BolsaIA</strong> · painel inteligente para leitura de mercado</span><span>🔒 Ambiente demonstrativo · sem envio de ordens reais</span></div>
 <div class="trust-row">
@@ -117,7 +167,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 st.caption("Ferramenta educacional. Indicadores, scores e cenários são hipotéticos e não constituem recomendação de investimento.")
-st.caption("🧭 V27 · Painel de demonstração · Preços dependem da fonte configurada · Nenhuma ordem real é enviada")
+st.caption("🧭 V28 · Painel de demonstração · Preços dependem da fonte configurada · Nenhuma ordem real é enviada")
 
 # V15: status operacional, qualidade do dado e horário da última atualização.
 def _status_mercado():
@@ -130,6 +180,13 @@ def _status_mercado():
 
 status_mercado, agora_status = _status_mercado()
 st.caption(f"{status_mercado} · Horário de Brasília: {agora_status.strftime('%d/%m/%Y %H:%M:%S')}")
+
+if st.session_state.pagina == "⚡ Scanner":
+    st.markdown("<div class='section'>⚡ Scanner de oportunidades</div>", unsafe_allow_html=True)
+    st.caption("Escolha os ativos abaixo. O score é técnico e educacional; ele não é uma promessa de retorno.")
+elif st.session_state.pagina == "📊 Análise":
+    st.markdown("<div class='section'>📊 Análise técnica</div>", unsafe_allow_html=True)
+    st.caption("Use o menu de ativos e os indicadores para entender cada cenário.")
 
 try:
     secrets = st.secrets
@@ -145,13 +202,17 @@ else:
 
 ativos = list(ATIVOS_B3.keys())
 SETOR_ATIVO = {
-    "PETR4":"Petróleo", "PRIO3":"Petróleo", "VALE3":"Mineração", "CSNA3":"Mineração", "CMIN3":"Mineração",
-    "ITUB4":"Bancos", "BBAS3":"Bancos", "BBDC4":"Bancos", "BBSE3":"Seguros", "B3SA3":"Serviços financeiros",
-    "CMIG3":"Energia", "CMIG4":"Energia", "ELET3":"Energia", "ELET6":"Energia", "CPLE6":"Energia", "CPFE3":"Energia", "TAEE11":"Energia",
-    "WEGE3":"Indústria", "EMBR3":"Indústria", "ABEV3":"Consumo", "MGLU3":"Varejo", "LREN3":"Varejo", "RENT3":"Transportes", "SUZB3":"Papel e celulose",
-    "XPML11":"FIIs / Imobiliário", "MXRF11":"FIIs / Imobiliário", "HGLG11":"FIIs / Imobiliário",
-    "BTLG11":"FIIs / Imobiliário", "KNCR11":"FIIs / Imobiliário", "XPLG11":"FIIs / Imobiliário",
-    "TRXF11":"FIIs / Imobiliário", "XPIN11":"FIIs / Imobiliário"
+    "PETR3":"Petróleo", "PETR4":"Petróleo", "PRIO3":"Petróleo",
+    "VALE3":"Mineração", "CSNA3":"Mineração", "CMIN3":"Mineração", "GGBR4":"Siderurgia", "GOAU4":"Siderurgia",
+    "ITUB3":"Bancos", "ITUB4":"Bancos", "ITSA4":"Bancos/Participações", "BBAS3":"Bancos", "BBDC3":"Bancos", "BBDC4":"Bancos",
+    "BBSE3":"Seguros", "B3SA3":"Serviços financeiros",
+    "CMIG3":"Energia", "CMIG4":"Energia", "ELET3":"Energia", "ELET6":"Energia", "CPLE6":"Energia", "CPFE3":"Energia", "TAEE11":"Energia", "EGIE3":"Energia",
+    "SBSP3":"Saneamento", "WEGE3":"Indústria", "EMBR3":"Indústria", "TOTS3":"Tecnologia",
+    "RADL3":"Saúde", "HYPE3":"Saúde", "VIVT3":"Telecom", "ABEV3":"Consumo", "MGLU3":"Varejo", "LREN3":"Varejo",
+    "RENT3":"Transportes", "AZUL4":"Transportes", "BRFS3":"Alimentos", "SUZB3":"Papel e celulose", "KLBN11":"Papel e celulose",
+    "XPML11":"FIIs / Imobiliário", "MXRF11":"FIIs / Imobiliário", "HGLG11":"FIIs / Imobiliário", "BTLG11":"FIIs / Imobiliário",
+    "KNCR11":"FIIs / Imobiliário", "XPLG11":"FIIs / Imobiliário", "TRXF11":"FIIs / Imobiliário", "XPIN11":"FIIs / Imobiliário",
+    "VISC11":"FIIs / Imobiliário", "HSML11":"FIIs / Imobiliário", "MALL11":"FIIs / Imobiliário"
 }
 with st.expander("🧭 Filtro por setor", expanded=False):
     setores = sorted(set(SETOR_ATIVO.values()))
@@ -274,7 +335,7 @@ def painel():
     detalhes = {}
     realtime_prices = {}
     realtime_source = {}
-    # V27: preço mais atual disponível por fonte. BTG é usado para ações B3 quando configurado;
+    # V28: preço mais atual disponível por fonte. BTG é usado para ações B3 quando configurado;
     # FIIs e fallback usam Yahoo Finance. A interface informa a origem para não confundir
     # cotação de mercado com dado tick-by-tick.
     acoes_sel = [t for t in selecionados if SETOR_ATIVO.get(t) != "FIIs / Imobiliário"]
@@ -392,7 +453,7 @@ def painel():
     with e4:
         st.markdown(f'<div class="exec-card"><div class="exec-label">Dados frescos</div><div class="exec-value">{dados_frescos}/{total_monitorados}</div><div class="muted">idade ≤ 2 min</div></div>', unsafe_allow_html=True)
     st.caption("Visão executiva resumida para leitura rápida. Os indicadores são técnicos e educacionais; não representam probabilidade de retorno.")
-    # V27: camada comercial de leitura rápida, sem alterar os cálculos do scanner.
+    # V28: camada comercial de leitura rápida, sem alterar os cálculos do scanner.
     if not valid_scores.empty:
         top_row = valid_scores.sort_values(["Score", "R/R"], ascending=[False, False]).iloc[0]
         top_ativo = str(top_row["Ativo"])
@@ -404,7 +465,7 @@ def painel():
         status_top = str(top_row["Status dado"])
         html = f"""
 <div class="v22-hero">
-  <div class="v22-kicker">🎯 Destaque da sessão · V27</div>
+  <div class="v22-kicker">🎯 Destaque da sessão · V28</div>
   <div class="v22-title">{top_ativo} · Score {top_score}/100 · {top_sinal}</div>
   <div class="v22-sub">Leitura executiva baseada nos mesmos indicadores técnicos do scanner. Use os detalhes abaixo para entender o cenário.</div>
   <div class="v22-grid">
@@ -654,7 +715,7 @@ def painel():
             st.caption("A evolução é registrada somente durante esta sessão do app; ela não representa histórico de rentabilidade real.")
 
             csv_carteira = carteira_df.to_csv(index=False).encode("utf-8")
-            st.download_button("⬇️ Exportar carteira CSV", csv_carteira, file_name="bolsaia_carteira_v27.csv", mime="text/csv")
+            st.download_button("⬇️ Exportar carteira CSV", csv_carteira, file_name="bolsaia_carteira_v28.csv", mime="text/csv")
     else:
         st.info("Nenhuma posição simulada cadastrada.")
 
@@ -799,7 +860,7 @@ def painel():
         st.caption("Fallback: Yahoo Finance. Ele não deve ser tratado como feed profissional em tempo real.")
 
 
-st.markdown("<div class='footer'>BolsaIA V27 · Inteligência de Mercado · Demonstração educacional · Dados dependem da fonte configurada</div>", unsafe_allow_html=True)
+st.markdown("<div class='footer'>BolsaIA V28 · Inteligência de Mercado · Demonstração educacional · Dados dependem da fonte configurada</div>", unsafe_allow_html=True)
 
 if hasattr(st, "fragment"):
     @st.fragment(run_every="5s")
