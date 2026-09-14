@@ -1,13 +1,15 @@
-# BolsaIA v7 — Confluência técnica
+# BolsaIA V8 — Confluência + Plano Técnico
 
-Evolução educacional do BolsaIA com:
-- candles e padrões simples;
-- RSI, MM20 e MM50;
-- volume e média de volume;
-- MACD e linha de sinal;
-- suporte de 20 candles;
-- Score IA de confluência técnica;
-- dividendos e simulador;
-- atualização de preço em ciclo de 5 s, com Yahoo como fallback quando BTG não estiver configurado.
+Aplicativo educacional em Streamlit para análise técnica de ativos B3.
 
-O Score IA é um motor determinístico de análise técnica e não é recomendação de investimento.
+## V8
+- Candles intraday
+- MM20/MM50, RSI, MACD e volume
+- Score de confluência técnica
+- Leitura simples de padrões de candles
+- Dividendos do Yahoo Finance
+- Plano técnico com alvo, stop, risco/retorno e ATR14
+- Confiança técnica = Score (não é probabilidade estatística)
+- Yahoo Finance como fallback quando BTG_API_KEY não está configurada
+
+Não constitui recomendação de investimento.

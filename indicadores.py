@@ -21,4 +21,12 @@ def calcular_indicadores(df):
     # Suporte/resistência simples usando máximas e mínimas recentes.
     df["Suporte20"] = df["Low"].rolling(20).min()
     df["Resistencia20"] = df["High"].rolling(20).max()
+
+    # ATR14: medida simples da volatilidade recente, usada apenas para
+    # dimensionar a folga do stop e o alvo técnico.
+    tr1 = df["High"] - df["Low"]
+    tr2 = (df["High"] - df["Close"].shift()).abs()
+    tr3 = (df["Low"] - df["Close"].shift()).abs()
+    true_range = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
+    df["ATR14"] = true_range.rolling(14).mean()
     return df

@@ -87,3 +87,36 @@ def analisar_candles(df):
     else:
         leitura = "NEUTRO"
     return sinais[0], leitura, sinais
+
+
+def calcular_plano(ultima, preco=None):
+    """Calcula níveis técnicos de referência; não é previsão nem recomendação."""
+    preco = float(preco if preco is not None else ultima["Close"])
+    suporte = float(ultima["Suporte20"])
+    resistencia = float(ultima["Resistencia20"])
+    atr = float(ultima.get("ATR14", 0) or 0)
+
+    if atr <= 0:
+        atr = max(preco * 0.01, 0.01)
+
+    # Stop abaixo do suporte recente, com pequena folga de volatilidade.
+    stop = suporte - 0.25 * atr
+    if stop >= preco:
+        stop = preco - atr
+
+    # Alvo prioriza resistência recente; se já estiver acima dela, usa uma extensão de 1,5 ATR.
+    alvo = resistencia if resistencia > preco else preco + 1.5 * atr
+    risco = preco - stop
+    retorno = alvo - preco
+    rr = (retorno / risco) if risco > 0 else None
+
+    # "Confiança" é apenas uma tradução visual do score técnico; não é probabilidade estatística.
+    return {
+        "preco": preco,
+        "stop": stop,
+        "alvo": alvo,
+        "risco_por_acao": max(risco, 0),
+        "retorno_por_acao": max(retorno, 0),
+        "risco_retorno": rr,
+        "atr": atr,
+    }

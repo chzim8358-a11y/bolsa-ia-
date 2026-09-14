@@ -6,11 +6,11 @@ from dados import (
     ATIVOS_B3,
 )
 from indicadores import calcular_indicadores
-from analisador import analisar, analisar_candles
+from analisador import analisar, analisar_candles, calcular_plano
 from dividendos import obter_dividendos_yahoo
 
-st.set_page_config(page_title="BolsaIA v6", page_icon="📡", layout="wide")
-st.title("📡 BolsaIA v6 — análise B3 em tempo real")
+st.set_page_config(page_title="BolsaIA v8", page_icon="📡", layout="wide")
+st.title("📡 BolsaIA v8 — análise B3 em tempo real")
 st.caption("Motor educacional de análise técnica. Não é recomendação de investimento.")
 
 try:
@@ -148,6 +148,7 @@ def painel():
     if disponiveis:
         ativo = st.selectbox("Ver análise detalhada", disponiveis)
         df, ultima, pontos, sinal, motivos, preco, candle_leitura, candle_padroes = detalhes[ativo]
+        plano = calcular_plano(ultima, preco)
         try:
             div = dividendos_atualizados(ativo)
         except Exception as e:
@@ -220,6 +221,16 @@ def painel():
         distancia_suporte = ((float(ultima["Close"]) / float(ultima["Suporte20"])) - 1) * 100 if float(ultima["Suporte20"]) else 0
         m4.metric("Suporte 20", f"R$ {float(ultima['Suporte20']):.2f}", help=f"Preço está {distancia_suporte:.1f}% acima do suporte recente.")
         st.caption("O Score IA combina tendência, RSI, volume, MACD e leitura de candles. É um modelo de análise técnica educacional; não garante movimentos futuros.")
+
+        st.markdown("### 🎯 Plano técnico")
+        p1, p2, p3, p4 = st.columns(4)
+        p1.metric("🎯 Alvo técnico", f"R$ {plano['alvo']:.2f}")
+        p2.metric("🛑 Stop técnico", f"R$ {plano['stop']:.2f}")
+        rr_txt = f"1:{plano['risco_retorno']:.2f}" if plano["risco_retorno"] is not None else "N/D"
+        p3.metric("⚖️ Risco/Retorno", rr_txt)
+        p4.metric("🧠 Confiança técnica", f"{pontos}/100")
+        st.caption("Alvo e stop são níveis técnicos calculados a partir de suporte, resistência e ATR recente. A confiança é o Score técnico do modelo, não uma probabilidade estatística de alta ou queda.")
+
         st.markdown("### 🕯️ Gráfico de Candles")
         try:
             import plotly.graph_objects as go
