@@ -1,4 +1,4 @@
-# BolsaIA v15 — Radar + Gestão de Risco
+# BolsaIA v16 — Radar + Gestão de Risco
 
 Aplicativo educacional em Streamlit para análise técnica, scanner de oportunidades, acompanhamento de carteira simulada e dimensionamento hipotético de posição por risco.
 
@@ -17,3 +17,11 @@ Aplicativo educacional em Streamlit para análise técnica, scanner de oportunid
 - Score, stop, alvo, quantidade e indicadores são cálculos educacionais/hipotéticos e não garantem resultados.
 - A carteira e o histórico continuam sendo locais à sessão do Streamlit.
 - Dados de mercado podem sofrer atraso, indisponibilidade, diferenças de ajuste ou falhas de conexão.
+
+V16 — melhorias
+- Alertas com detecção de entrada no limiar e cooldown para reduzir repetição.
+- Delta de Score entre ciclos para mostrar aceleração/desaceleração do sinal.
+- Limite de risco agregado da carteira simulada.
+- Exportação de snapshot completo do scanner.
+- Indicador de qualidade/idade dos dados mais explícito.
+- Correção de normalização de cotações para respostas de uma única linha.

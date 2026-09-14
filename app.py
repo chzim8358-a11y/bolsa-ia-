@@ -9,8 +9,8 @@ from indicadores import calcular_indicadores
 from analisador import analisar, analisar_candles, calcular_plano
 from dividendos import obter_dividendos_yahoo
 
-st.set_page_config(page_title="BolsaIA v15", page_icon="🚀", layout="wide")
-st.title("🚀 BolsaIA v15 — Radar + Gestão de Risco")
+st.set_page_config(page_title="BolsaIA v16", page_icon="🚀", layout="wide")
+st.title("🚀 BolsaIA v16 — Radar + Gestão de Risco")
 st.caption("Motor educacional de análise técnica + acompanhamento de carteira simulada. Não é recomendação de investimento.")
 
 # V15: status operacional, qualidade do dado e horário da última atualização.
@@ -60,6 +60,8 @@ with st.sidebar:
     st.markdown("### 🛡️ Gestão de risco")
     risco_reais = st.number_input("Risco máximo por operação (R$)", min_value=1.0, value=100.0, step=10.0)
     capital_risco = st.number_input("Capital disponível (R$)", min_value=100.0, value=10000.0, step=500.0)
+    risco_total_max = st.number_input("Risco máximo total simulado (R$)", min_value=1.0, value=300.0, step=25.0)
+    cooldown_alerta = st.number_input("Intervalo mínimo do mesmo alerta (s)", min_value=10, value=60, step=10)
 
 
 @st.cache_data(ttl=4, show_spinner=False)
@@ -125,7 +127,9 @@ def normalizar_cotacao_df(df):
                 pass
     elif len(df) == 1 and price_col:
         try:
-            out[selecionados[0]] = float(df.iloc[0][price_col])
+            # Algumas respostas de quote omitem o ticker; o chamador faz o fallback
+            # pelo ativo solicitado, sem depender de variável global.
+            out["__single__"] = float(df.iloc[0][price_col])
         except Exception:
             pass
     return out
@@ -149,6 +153,8 @@ def painel():
     if usar_btg:
         try:
             realtime_prices = normalizar_cotacao_df(cotacoes_btg(selecionados, secrets=secrets))
+            if "__single__" in realtime_prices and len(selecionados) == 1:
+                realtime_prices[selecionados[0]] = realtime_prices.pop("__single__")
         except Exception as e:
             st.warning(f"Cotações realtime indisponíveis nesta atualização: {e}")
 
@@ -177,6 +183,8 @@ def painel():
                 "Volume": float(ultima["Volume"]),
                 "Score": pontos,
                 "Sinal": sinal,
+                "Δ Score": None,
+
                 "Candle": candle_leitura,
                 "R/R": plano_scan["risco_retorno"],
                 "Yield 12m": dy_scan,
@@ -194,10 +202,21 @@ def painel():
         except Exception as e:
             resultados.append({
                 "Ativo": ticker, "Preço": None, "RSI": None, "MM20": None,
-                "MM50": None, "MM200": None, "ADX": None, "Volume": None, "Score": None, "Sinal": f"ERRO: {e}", "Candle": "ERRO", "R/R": None, "Yield 12m": None, "Variação": None, "ATR %": None, "Stop": None, "Alvo": None, "Risco/ação": None, "Dist. stop %": None, "Qtd. risco": None, "Idade dado (min)": None, "Status dado": "N/D",
+                "MM50": None, "MM200": None, "ADX": None, "Volume": None, "Score": None, "Sinal": f"ERRO: {e}", "Δ Score": None, "Candle": "ERRO", "R/R": None, "Yield 12m": None, "Variação": None, "ATR %": None, "Stop": None, "Alvo": None, "Risco/ação": None, "Dist. stop %": None, "Qtd. risco": None, "Idade dado (min)": None, "Status dado": "N/D",
             })
 
     tabela = pd.DataFrame(resultados)
+
+    # V16: variação do Score entre ciclos para detectar aceleração ou perda de força.
+    scores_anteriores = st.session_state.get("ultimos_scores", {})
+    if not tabela.empty:
+        tabela["Δ Score"] = tabela.apply(
+            lambda r: (float(r["Score"]) - scores_anteriores.get(str(r["Ativo"])))
+            if pd.notna(r.get("Score")) and str(r["Ativo"]) in scores_anteriores else None, axis=1
+        )
+        st.session_state.ultimos_scores = {
+            str(r["Ativo"]): float(r["Score"]) for _, r in tabela.iterrows() if pd.notna(r.get("Score"))
+        }
 
     # V14: histórico de mudanças de sinal para não depender apenas do alerta atual.
     atual_sinais = {str(r["Ativo"]): r["Sinal"] for _, r in tabela.iterrows() if pd.notna(r.get("Sinal"))}
@@ -234,6 +253,7 @@ def painel():
             "ADX": st.column_config.NumberColumn(format="%.1f"),
             "Volume": st.column_config.NumberColumn(format="%.0f"),
             "Score": st.column_config.NumberColumn(format="%d/100"),
+            "Δ Score": st.column_config.NumberColumn(format="%+.0f"),
             "Candle": st.column_config.TextColumn(),
             "R/R": st.column_config.NumberColumn(format="1:%.2f"),
             "Yield 12m": st.column_config.NumberColumn(format="%.2f%%"),
@@ -250,7 +270,7 @@ def painel():
     )
 
     csv_scanner = tabela.to_csv(index=False).encode("utf-8")
-    st.download_button("⬇️ Exportar scanner CSV", csv_scanner, file_name="bolsaia_scanner_v15.csv", mime="text/csv", key="export_scanner_v15")
+    st.download_button("⬇️ Exportar scanner CSV", csv_scanner, file_name="bolsaia_scanner_v16.csv", mime="text/csv", key="export_scanner_v16")
 
     # V13: resumo de risco do scanner.
     st.markdown("### 🛡️ Gestão de risco por ativo")
@@ -267,6 +287,20 @@ def painel():
         st.caption(f"Cálculo educacional: a quantidade é limitada por R$ {risco_reais:,.2f} de risco por operação e por {capital_risco:,.2f} de capital disponível. Não é recomendação de tamanho de posição.".replace(",", "X").replace(".", ",").replace("X", "."))
     else:
         st.info("Sem dados suficientes para calcular o risco.")
+
+    # V16: risco agregado das quantidades simuladas sugeridas pelo scanner.
+    try:
+        risco_agregado = float((tabela["Qtd. risco"].fillna(0) * tabela["Risco/ação"].fillna(0)).sum())
+    except Exception:
+        risco_agregado = 0.0
+    if risco_agregado > risco_total_max:
+        st.warning(f"⚠️ Risco agregado potencial do scanner: R$ {risco_agregado:,.2f} — acima do limite simulado de R$ {risco_total_max:,.2f}.".replace(",", "X").replace(".", ",").replace("X", "."))
+    else:
+        st.info(f"🛡️ Risco agregado potencial do scanner: R$ {risco_agregado:,.2f} / R$ {risco_total_max:,.2f}.".replace(",", "X").replace(".", ",").replace("X", "."))
+
+    # V16: snapshot completo para auditoria da sessão.
+    csv_snapshot = tabela.to_csv(index=False).encode("utf-8")
+    st.download_button("⬇️ Exportar snapshot completo CSV", csv_snapshot, file_name="bolsaia_snapshot_v16.csv", mime="text/csv", key="export_snapshot_v16")
 
     # Radar V9: ranking visual das melhores pontuações entre os ativos monitorados.
     st.markdown("### 🏆 Radar de Oportunidades")
@@ -304,7 +338,7 @@ def painel():
         hist_alertas["hora"] = hist_alertas["hora"].dt.strftime("%d/%m/%Y %H:%M:%S")
         st.dataframe(hist_alertas, use_container_width=True, hide_index=True, column_config={"preco": st.column_config.NumberColumn("Preço", format="R$ %.2f"), "score": st.column_config.NumberColumn("Score", format="%d/100")})
         csv_alertas = hist_alertas.to_csv(index=False).encode("utf-8")
-        st.download_button("⬇️ Exportar alertas CSV", csv_alertas, file_name="bolsaia_alertas_v15.csv", mime="text/csv")
+        st.download_button("⬇️ Exportar alertas CSV", csv_alertas, file_name="bolsaia_alertas_v16.csv", mime="text/csv")
     else:
         st.info("Nenhum alerta registrado nesta sessão ainda. O histórico começa quando um ativo atingir o limiar configurado.")
 
