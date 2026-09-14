@@ -12,13 +12,13 @@ from analisador import analisar, analisar_candles, calcular_plano
 from dividendos import obter_dividendos_yahoo
 
 st.set_page_config(
-    page_title="BolsaIA V24 | Inteligência de Mercado",
+    page_title="BolsaIA V25 | Inteligência de Mercado",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# V24 — identidade visual premium baseada na nova marca BolsaIA; foco em apresentação comercial.
+# V25 — identidade visual premium baseada na nova marca BolsaIA; foco em apresentação comercial.
 _logo_path = Path(__file__).with_name("logo.png")
 _logo_b64 = base64.b64encode(_logo_path.read_bytes()).decode("ascii") if _logo_path.exists() else ""
 _hero_html = """
@@ -51,6 +51,21 @@ _hero_html = """
 .v22-tile strong { display:block; color:#f8fafc; font-size:.92rem; }
 .v22-tile span { color:#91a6c1; font-size:.76rem; }
 @media (max-width:700px) { .v22-grid { grid-template-columns:1fr; } .v22-title { font-size:1.2rem; } } 
+.v25-market { display:grid; grid-template-columns:1.4fr .8fr .8fr .8fr; gap:.7rem; margin:.8rem 0 1rem; }
+.v25-panel { border:1px solid rgba(96,170,255,.14); border-radius:16px; padding:.85rem .95rem; background:rgba(12,23,40,.78); }
+.v25-kicker { color:#7ddcff; font-size:.68rem; font-weight:900; text-transform:uppercase; letter-spacing:.08em; }
+.v25-big { color:#f8fafc; font-size:1.35rem; font-weight:900; margin-top:.15rem; }
+.v25-small { color:#8fa6c5; font-size:.76rem; margin-top:.18rem; }
+.v25-dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:.4rem; background:#5ee6a1; box-shadow:0 0 12px rgba(94,230,161,.45); }
+.v25-dot.warn { background:#ffd166; box-shadow:0 0 12px rgba(255,209,102,.35); }
+.v25-dot.bad { background:#ff6b7a; box-shadow:0 0 12px rgba(255,107,122,.35); }
+.v25-rank { padding:.65rem .75rem; border-radius:12px; background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.06); margin:.4rem 0; }
+.v25-rank-row { display:flex; align-items:center; justify-content:space-between; gap:.6rem; }
+.v25-score { font-weight:900; color:#f8fafc; }
+.v25-bar { height:7px; border-radius:99px; background:#17253a; overflow:hidden; margin-top:.45rem; }
+.v25-fill { height:100%; border-radius:99px; background:#46cfff; }
+@media (max-width:900px) { .v25-market { grid-template-columns:1fr 1fr; } }
+@media (max-width:600px) { .v25-market { grid-template-columns:1fr; } }
 .signal-pill { display:inline-block; padding:.3rem .72rem; border-radius:999px; font-weight:800; font-size:.8rem; background:#152744; color:#bcd3ff; border:1px solid #294a80; }
 .reason { padding:.45rem .65rem; margin:.25rem 0; border-radius:9px; background:#0d1728; border:1px solid rgba(255,255,255,.06); color:#d9e2f0; }
 .stApp, .stApp p, .stApp label, .stApp [data-testid="stMarkdownContainer"], .stApp [data-testid="stCaptionContainer"] { color:#dbe4f0; }
@@ -102,7 +117,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 st.caption("Ferramenta educacional. Indicadores, scores e cenários são hipotéticos e não constituem recomendação de investimento.")
-st.caption("🧭 V24 · Painel de demonstração · Dados dependem da fonte configurada · Nenhuma ordem real é enviada")
+st.caption("🧭 V25 · Painel de demonstração · Dados dependem da fonte configurada · Nenhuma ordem real é enviada")
 
 # V15: status operacional, qualidade do dado e horário da última atualização.
 def _status_mercado():
@@ -364,6 +379,37 @@ def painel():
 """
         st.markdown(html, unsafe_allow_html=True)
 
+    # V25: resumo comercial do mercado e ranking compacto, sem alterar os cálculos.
+    if not valid_scores.empty:
+        media_score = float(valid_scores["Score"].mean())
+        fortes = int((valid_scores["Score"] >= 75).sum())
+        neutros = int(((valid_scores["Score"] >= 40) & (valid_scores["Score"] < 60)).sum())
+        quedas = int((valid_scores["Score"] < 40).sum())
+        if media_score >= 65:
+            clima, dot_cls = "Viés técnico positivo", ""
+        elif media_score >= 50:
+            clima, dot_cls = "Mercado misto / seletivo", "warn"
+        else:
+            clima, dot_cls = "Viés técnico defensivo", "bad"
+        st.markdown(f"""
+<div class="v25-market">
+  <div class="v25-panel"><div class="v25-kicker">🧭 Leitura do universo</div><div class="v25-big"><span class="v25-dot {dot_cls}"></span>{clima}</div><div class="v25-small">Score médio dos ativos monitorados: {media_score:.0f}/100</div></div>
+  <div class="v25-panel"><div class="v25-kicker">🔥 Fortes</div><div class="v25-big">{fortes}</div><div class="v25-small">Score ≥ 75</div></div>
+  <div class="v25-panel"><div class="v25-kicker">⏳ Seletivos</div><div class="v25-big">{neutros}</div><div class="v25-small">Score entre 40 e 59</div></div>
+  <div class="v25-panel"><div class="v25-kicker">⚠️ Defensivos</div><div class="v25-big">{quedas}</div><div class="v25-small">Score &lt; 40</div></div>
+</div>
+""", unsafe_allow_html=True)
+        ranking25 = valid_scores.sort_values(["Score", "R/R"], ascending=[False, False]).head(5)
+        with st.expander("🏆 Top 5 do monitoramento", expanded=False):
+            for _, rr in ranking25.iterrows():
+                score25 = int(rr["Score"])
+                sinal25 = str(rr["Sinal"])
+                st.markdown(f"""
+<div class="v25-rank">
+  <div class="v25-rank-row"><strong>{rr["Ativo"]}</strong><span class="v25-score">{score25}/100 · {sinal25}</span></div>
+  <div class="v25-bar"><div class="v25-fill" style="width:{score25}%"></div></div>
+</div>
+""", unsafe_allow_html=True)
     st.markdown('<div class="section">🔎 Scanner de oportunidades</div>', unsafe_allow_html=True)
     stamp = st.session_state.get("ultima_atualizacao_painel")
     if stamp is not None:
@@ -404,7 +450,7 @@ def painel():
     )
 
     csv_scanner = tabela.to_csv(index=False).encode("utf-8")
-    st.download_button("⬇️ Exportar scanner CSV", csv_scanner, file_name="bolsaia_scanner_v24.csv", mime="text/csv", key="export_scanner_v22")
+    st.download_button("⬇️ Exportar scanner CSV", csv_scanner, file_name="bolsaia_scanner_v25.csv", mime="text/csv", key="export_scanner_v25")
 
     # V13: resumo de risco do scanner.
     st.markdown('<div class="section">🛡️ Gestão de risco por ativo</div>', unsafe_allow_html=True)
@@ -434,7 +480,7 @@ def painel():
 
     # V17: snapshot completo para auditoria da sessão.
     csv_snapshot = tabela.to_csv(index=False).encode("utf-8")
-    st.download_button("⬇️ Exportar snapshot completo CSV", csv_snapshot, file_name="bolsaia_snapshot_v24.csv", mime="text/csv", key="export_snapshot_v22")
+    st.download_button("⬇️ Exportar snapshot completo CSV", csv_snapshot, file_name="bolsaia_snapshot_v25.csv", mime="text/csv", key="export_snapshot_v25")
 
     # Radar V9: ranking visual das melhores pontuações entre os ativos monitorados.
     st.markdown('<div class="section">🏆 Radar de Oportunidades</div>', unsafe_allow_html=True)
@@ -568,7 +614,7 @@ def painel():
             st.caption("A evolução é registrada somente durante esta sessão do app; ela não representa histórico de rentabilidade real.")
 
             csv_carteira = carteira_df.to_csv(index=False).encode("utf-8")
-            st.download_button("⬇️ Exportar carteira CSV", csv_carteira, file_name="bolsaia_carteira_v24.csv", mime="text/csv")
+            st.download_button("⬇️ Exportar carteira CSV", csv_carteira, file_name="bolsaia_carteira_v25.csv", mime="text/csv")
     else:
         st.info("Nenhuma posição simulada cadastrada.")
 
@@ -713,7 +759,7 @@ def painel():
         st.caption("Fallback: Yahoo Finance. Ele não deve ser tratado como feed profissional em tempo real.")
 
 
-st.markdown("<div class='footer'>BolsaIA V24 · Inteligência de Mercado · Demonstração educacional · Dados dependem da fonte configurada</div>", unsafe_allow_html=True)
+st.markdown("<div class='footer'>BolsaIA V25 · Inteligência de Mercado · Demonstração educacional · Dados dependem da fonte configurada</div>", unsafe_allow_html=True)
 
 if hasattr(st, "fragment"):
     @st.fragment(run_every="5s")

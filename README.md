@@ -1,4 +1,4 @@
-# BolsaIA V22 — Dashboard Profissional
+# BolsaIA V25 — Dashboard Profissional
 
 Aplicativo educacional em Streamlit para análise técnica, scanner de oportunidades, acompanhamento de carteira simulada e dimensionamento hipotético de posição por risco.
 
@@ -62,3 +62,11 @@ V16 — melhorias
 
 ## Uso responsável
 A BolsaIA é uma ferramenta de análise técnica educacional/simulada. Scores, sinais, stops, alvos e dimensionamentos são cálculos hipotéticos e não constituem recomendação de investimento ou garantia de resultado.
+
+\n## V25 — dashboard comercial refinado
+- Resumo de clima técnico do universo monitorado com Score médio.
+- Indicadores rápidos de ativos fortes, seletivos e defensivos.
+- Top 5 compacto do monitoramento com barra visual de Score.
+- Identidade e exportações atualizadas para V25.
+- Mantidos os cálculos técnicos, scanner, risco, carteira simulada, dividendos e fontes BTG/Yahoo.
+- Nenhuma ordem real é enviada.
