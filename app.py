@@ -3,13 +3,13 @@ import pandas as pd
 
 from dados import (
     dados_yahoo, dados_btg_realtime, cotacoes_btg, btg_disponivel,
-    ATIVOS_B3,
+    ATIVOS_B3, dividendos_yahoo,
 )
 from indicadores import calcular_indicadores
 from analisador import analisar
 
-st.set_page_config(page_title="BolsaIA v5", page_icon="📡", layout="wide")
-st.title("📡 BolsaIA v5 — análise B3 em tempo real")
+st.set_page_config(page_title="BolsaIA v6", page_icon="📡", layout="wide")
+st.title("📡 BolsaIA v6 — análise B3 em tempo real")
 st.caption("Motor educacional de análise técnica. Não é recomendação de investimento.")
 
 try:
@@ -85,6 +85,7 @@ def painel():
     resultados = []
     detalhes = {}
     realtime_prices = {}
+    dividendos = {ticker: dividendos_yahoo(ticker) for ticker in selecionados}
     if usar_btg:
         try:
             realtime_prices = normalizar_cotacao_df(cotacoes_btg(selecionados, secrets=secrets))
@@ -104,12 +105,15 @@ def painel():
                 "Volume": float(ultima["Volume"]),
                 "Score": pontos,
                 "Sinal": sinal,
+                "Dividendo 12m/cota": dividendos.get(ticker, {}).get("dividendo_12m", 0.0),
+                "Último dividendo/cota": dividendos.get(ticker, {}).get("ultimo_dividendo", 0.0),
             })
             detalhes[ticker] = (df, ultima, pontos, sinal, motivos, preco)
         except Exception as e:
             resultados.append({
                 "Ativo": ticker, "Preço": None, "RSI": None, "MM20": None,
                 "MM50": None, "Volume": None, "Score": None, "Sinal": f"ERRO: {e}",
+                "Dividendo 12m/cota": None, "Último dividendo/cota": None,
             })
 
     tabela = pd.DataFrame(resultados)
@@ -131,6 +135,8 @@ def painel():
             "MM50": st.column_config.NumberColumn(format="R$ %.2f"),
             "Volume": st.column_config.NumberColumn(format="%.0f"),
             "Score": st.column_config.NumberColumn(format="%d/100"),
+            "Dividendo 12m/cota": st.column_config.NumberColumn(format="R$ %.4f"),
+            "Último dividendo/cota": st.column_config.NumberColumn(format="R$ %.4f"),
         },
     )
 
@@ -138,11 +144,16 @@ def painel():
     if disponiveis:
         ativo = st.selectbox("Ver análise detalhada", disponiveis)
         df, ultima, pontos, sinal, motivos, preco = detalhes[ativo]
-        c1, c2, c3, c4 = st.columns(4)
+        c1, c2, c3, c4, c5, c6 = st.columns(6)
         c1.metric("Preço realtime", f"R$ {preco:.2f}")
         c2.metric("RSI", f"{ultima.RSI:.1f}")
         c3.metric("Score", f"{pontos}/100")
         c4.metric("Sinal", sinal)
+        div = dividendos.get(ativo, {})
+        c5.metric("Dividendo 12m/cota", f"R$ {div.get('dividendo_12m', 0):.4f}")
+        c6.metric("Último dividendo/cota", f"R$ {div.get('ultimo_dividendo', 0):.4f}")
+        if div.get("data_ultimo"):
+            st.caption(f"Último pagamento registrado: {div['data_ultimo']} • Fonte: Yahoo Finance")
         st.line_chart(df[["Close", "MM20", "MM50"]].dropna())
         st.write("**Motivos do sinal:**")
         for m in motivos:

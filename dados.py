@@ -153,3 +153,21 @@ def cotacoes_btg(tickers, secrets=None) -> pd.DataFrame:
     if not isinstance(df, pd.DataFrame):
         df = pd.DataFrame(df)
     return df
+
+
+def dividendos_yahoo(ticker: str) -> dict:
+    """Referência de dividendos por ação usando o histórico do Yahoo Finance."""
+    simbolo = ATIVOS_B3.get(ticker, ticker if ticker.endswith(".SA") else f"{ticker}.SA")
+    try:
+        hist = yf.Ticker(simbolo).dividends
+        if hist is None or hist.empty:
+            return {"dividendo_12m": 0.0, "ultimo_dividendo": 0.0, "data_ultimo": None}
+        hist = pd.to_numeric(hist, errors="coerce").dropna()
+        if hist.empty:
+            return {"dividendo_12m": 0.0, "ultimo_dividendo": 0.0, "data_ultimo": None}
+        idx = pd.to_datetime(hist.index, errors="coerce")
+        hist.index = idx.tz_localize(None) if getattr(idx, "tz", None) is not None else idx
+        inicio = pd.Timestamp.now() - pd.Timedelta(days=365)
+        return {"dividendo_12m": float(hist[hist.index >= inicio].sum()), "ultimo_dividendo": float(hist.iloc[-1]), "data_ultimo": hist.index[-1].strftime("%d/%m/%Y")}
+    except Exception:
+        return {"dividendo_12m": 0.0, "ultimo_dividendo": 0.0, "data_ultimo": None}
