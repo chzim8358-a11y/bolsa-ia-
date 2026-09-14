@@ -25,3 +25,49 @@ def analisar(ultima):
     elif pontos < 40: sinal = "VENDA — moderado"
     else: sinal = "AGUARDAR"
     return pontos, sinal, motivos
+
+
+def analisar_candles(df):
+    """Identifica padrões simples nas últimas velas. É análise técnica, não previsão."""
+    if df is None or len(df) < 2:
+        return "Sem dados suficientes", "NEUTRO", []
+
+    atual = df.iloc[-1]
+    anterior = df.iloc[-2]
+    o, h, l, c = map(float, [atual["Open"], atual["High"], atual["Low"], atual["Close"]])
+    po, pc = float(anterior["Open"]), float(anterior["Close"])
+    corpo = abs(c - o)
+    amplitude = max(h - l, 1e-9)
+    superior = h - max(o, c)
+    inferior = min(o, c) - l
+    sinais = []
+    viés = 0
+
+    if corpo / amplitude <= 0.10:
+        sinais.append("Doji: indecisão")
+
+    if inferior >= corpo * 2 and superior <= max(corpo * 0.75, amplitude * 0.08) and c >= o:
+        sinais.append("Martelo: possível reação compradora")
+        viés += 1
+
+    if superior >= corpo * 2 and inferior <= max(corpo * 0.75, amplitude * 0.08) and c <= o:
+        sinais.append("Estrela cadente: possível pressão vendedora")
+        viés -= 1
+
+    if pc < po and c > o and o <= pc and c >= po:
+        sinais.append("Engolfo de alta")
+        viés += 2
+    elif pc > po and c < o and o >= pc and c <= po:
+        sinais.append("Engolfo de baixa")
+        viés -= 2
+
+    if not sinais:
+        sinais.append("Nenhum padrão forte detectado na última vela")
+
+    if viés > 0:
+        leitura = "ALTA"
+    elif viés < 0:
+        leitura = "BAIXA"
+    else:
+        leitura = "NEUTRO"
+    return sinais[0], leitura, sinais

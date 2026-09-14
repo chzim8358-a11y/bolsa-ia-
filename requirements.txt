@@ -3,3 +3,5 @@ pandas>=2.0
 numpy>=1.24
 yfinance>=0.2.40
 btgsolutions-dataservices-python-client>=3.2.12
+
+plotly>=5.18

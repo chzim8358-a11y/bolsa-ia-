@@ -6,7 +6,7 @@ from dados import (
     ATIVOS_B3,
 )
 from indicadores import calcular_indicadores
-from analisador import analisar
+from analisador import analisar, analisar_candles
 from dividendos import obter_dividendos_yahoo
 
 st.set_page_config(page_title="BolsaIA v6", page_icon="📡", layout="wide")
@@ -207,6 +207,31 @@ def painel():
         c2.metric("RSI", f"{ultima.RSI:.1f}")
         c3.metric("Score", f"{pontos}/100")
         c4.metric("Sinal", sinal)
+        st.markdown("### 🕯️ Gráfico de Candles")
+        try:
+            import plotly.graph_objects as go
+            grafico_df = df.dropna(subset=["Open", "High", "Low", "Close"]).tail(120)
+            fig = go.Figure(data=[go.Candlestick(
+                x=grafico_df.index,
+                open=grafico_df["Open"], high=grafico_df["High"],
+                low=grafico_df["Low"], close=grafico_df["Close"],
+                name=ativo
+            )])
+            fig.add_trace(go.Scatter(x=grafico_df.index, y=grafico_df["MM20"], name="MM20", mode="lines"))
+            fig.add_trace(go.Scatter(x=grafico_df.index, y=grafico_df["MM50"], name="MM50", mode="lines"))
+            fig.update_layout(height=520, xaxis_rangeslider_visible=False, margin=dict(l=10, r=10, t=30, b=10),
+                              xaxis_title="Tempo", yaxis_title="Preço (R$)")
+            st.plotly_chart(fig, use_container_width=True, key=f"candles_{ativo}")
+            titulo, leitura, padroes = analisar_candles(grafico_df)
+            st.markdown("### 🤖 Leitura das Candles")
+            cc1, cc2 = st.columns(2)
+            cc1.metric("Última vela", titulo)
+            cc2.metric("Viés do padrão", leitura)
+            for p in padroes:
+                st.write("•", p)
+            st.caption("A leitura de candles é baseada em padrões técnicos simples e não constitui recomendação de investimento.")
+        except ImportError:
+            st.warning("Gráfico de candles requer Plotly. Adicione a dependência 'plotly' ao requirements.txt.")
         st.line_chart(df[["Close", "MM20", "MM50"]].dropna())
         st.write("**Motivos do sinal:**")
         for m in motivos:
