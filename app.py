@@ -202,7 +202,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 st.caption("Ferramenta educacional. Indicadores, scores e cenários são hipotéticos e não constituem recomendação de investimento.")
-st.caption("🧭 V37 · Painel de demonstração · Preços dependem da fonte configurada · Nenhuma ordem real é enviada")
+st.caption("🧭 V38 · Experiência inteligente · Preços dependem da fonte configurada · Nenhuma ordem real é enviada")
 
 # V15: status operacional, qualidade do dado e horário da última atualização.
 def _status_mercado():
@@ -215,6 +215,29 @@ def _status_mercado():
 
 status_mercado, agora_status = _status_mercado()
 st.caption(f"{status_mercado} · Horário de Brasília: {agora_status.strftime('%d/%m/%Y %H:%M:%S')}")
+
+# V38: central de qualidade dos dados. O usuário consegue distinguir
+# rapidamente fonte, frescor e disponibilidade antes de interpretar os sinais.
+try:
+    _btg_ok = btg_disponivel(st.secrets if hasattr(st, "secrets") else None)
+except Exception:
+    _btg_ok = False
+try:
+    _frescos = int((tabela["Status dado"] == "🟢 fresco").sum()) if "tabela" in globals() and "Status dado" in tabela.columns else 0
+    _total_dados = len(tabela) if "tabela" in globals() else 0
+except Exception:
+    _frescos, _total_dados = 0, 0
+_q1, _q2, _q3 = st.columns(3)
+with _q1:
+    st.metric("📡 Fonte principal", "BTG realtime" if _btg_ok else "Yahoo fallback")
+with _q2:
+    st.metric("🟢 Dados frescos", f"{_frescos}/{_total_dados}" if _total_dados else "Aguardando")
+with _q3:
+    st.metric("🕐 Última leitura", agora_status.strftime("%H:%M:%S"))
+if not _btg_ok:
+    st.warning("🟡 Feed BTG não configurado nesta sessão. O app pode usar Yahoo Finance como fallback, que pode apresentar atraso.")
+else:
+    st.success("🟢 Feed BTG disponível. A idade do dado ainda deve ser conferida por ativo.")
 
 # V30: Home inteligente para leitura rápida por iniciantes.
 def _texto_tendencia(media_score):
@@ -302,7 +325,7 @@ if st.button("🔄 Atualizar agora", use_container_width=False):
 # V14: parâmetros de gestão de risco + monitoramento de mudanças de sinal.
 with st.sidebar:
     st.markdown("### 🧭 Modo de leitura")
-    modo_leitura = st.radio("Como você quer visualizar?", ["🧑‍🏫 Iniciante", "🧠 Avançado"], index=0, key="modo_leitura_v36")
+    modo_leitura = st.radio("Como você quer visualizar?", ["🧑‍🏫 Iniciante", "🧠 Avançado"], index=0, key="modo_leitura_v38")
     st.caption("O modo Iniciante explica os indicadores em linguagem simples; o Avançado mostra mais detalhes técnicos.")
     st.markdown("### 🛡️ Gestão de risco")
     risco_reais = st.number_input("Risco máximo por operação (R$)", min_value=1.0, value=100.0, step=10.0)
@@ -657,7 +680,7 @@ def painel():
                 score_chart = valid_scores[["Ativo", "Score"]].sort_values("Score", ascending=True)
                 fig_score = px.bar(score_chart, x="Score", y="Ativo", orientation="h", title="Score por ativo", range_x=[0,100])
                 fig_score.update_layout(height=360, margin=dict(l=10,r=10,t=45,b=10))
-                st.plotly_chart(fig_score, use_container_width=True, key="dashboard_score_v36")
+                st.plotly_chart(fig_score, use_container_width=True, key="dashboard_score_v38")
             with chart2:
                 cat_counts = tabela["Categoria"].value_counts().reset_index()
                 cat_counts.columns = ["Categoria", "Quantidade"]
@@ -722,7 +745,7 @@ def painel():
     )
 
     csv_scanner = tabela.to_csv(index=False).encode("utf-8")
-    st.download_button("⬇️ Exportar scanner CSV", csv_scanner, file_name="bolsaia_scanner_v36.csv", mime="text/csv", key="export_scanner_v36")
+    st.download_button("⬇️ Exportar scanner CSV", csv_scanner, file_name="bolsaia_scanner_v38.csv", mime="text/csv", key="export_scanner_v38")
 
     # V13: resumo de risco do scanner.
     st.markdown('<div class="section">🛡️ Gestão de risco por ativo</div>', unsafe_allow_html=True)
@@ -752,7 +775,7 @@ def painel():
 
     # V17: snapshot completo para auditoria da sessão.
     csv_snapshot = tabela.to_csv(index=False).encode("utf-8")
-    st.download_button("⬇️ Exportar snapshot completo CSV", csv_snapshot, file_name="bolsaia_snapshot_v36.csv", mime="text/csv", key="export_snapshot_v36")
+    st.download_button("⬇️ Exportar snapshot completo CSV", csv_snapshot, file_name="bolsaia_snapshot_v38.csv", mime="text/csv", key="export_snapshot_v38")
 
     # Radar V9: ranking visual das melhores pontuações entre os ativos monitorados.
     st.markdown('<div class="section">🏆 Radar de Oportunidades</div>', unsafe_allow_html=True)
@@ -941,7 +964,7 @@ def painel():
     # ativo/FII e os dados são carregados somente para aquele ativo.
     universo_analise = list(dict.fromkeys(ativos))
     if universo_analise:
-        ativo = st.selectbox("🔎 Escolha qualquer ação ou FII para análise completa", universo_analise, key="analise_ativo_v35")
+        ativo = st.selectbox("🔎 Escolha qualquer ação ou FII para análise completa", universo_analise, key="analise_ativo_v38")
         if ativo in detalhes:
             df, ultima, pontos, sinal, motivos, preco, candle_leitura, candle_padroes = detalhes[ativo]
         else:
@@ -984,7 +1007,7 @@ def painel():
         # Simulador simples de renda com dividendos. Usa valores históricos
         # efetivamente registrados; não é uma previsão de pagamento futuro.
         st.markdown("### 🧮 Quanto você receberia em dividendos?")
-        qtd_custom = st.number_input("Quantidade de ações", min_value=1, value=100, step=1, key=f"qtd_div_v36_{ativo}")
+        qtd_custom = st.number_input("Quantidade de ações", min_value=1, value=100, step=1, key=f"qtd_div_v38_{ativo}")
         ultimo_por_acao = div.get("ultimo_dividendo")
         total_12m_por_acao = div.get("dividendos_12m")
         if ultimo_por_acao is not None:
