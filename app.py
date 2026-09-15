@@ -13,7 +13,7 @@ from analisador import analisar, analisar_candles, calcular_plano
 from dividendos import obter_dividendos_yahoo
 
 st.set_page_config(
-    page_title="BolsaIA V38 | Inteligência de Mercado",
+    page_title="BolsaIA V39 | Inteligência de Mercado",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -125,7 +125,7 @@ div[data-testid="stMetric"] { background:rgba(13,24,42,.82); border:1px solid rg
   <div class="brand-row">
     <img class="brand-logo" src="data:image/png;base64,LOGO_B64" />
     <div>
-      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V38</span></h1>
+      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V39</span></h1>
       <div class="tagline">Inteligência de mercado para análise técnica, radar e gestão de risco.</div>
       <div class="mini"><span class="chip">⚡ Scanner inteligente</span><span class="chip">📊 Análise técnica</span><span class="chip green">🛡️ Carteira simulada</span></div>
     </div>
@@ -135,7 +135,7 @@ div[data-testid="stMetric"] { background:rgba(13,24,42,.82); border:1px solid rg
 _hero_html = _hero_html.replace("LOGO_B64", _logo_b64)
 st.markdown(_hero_html, unsafe_allow_html=True)
 
-# V38: navegação interna corrigida. Todos os atalhos trocam de tela dentro do app,
+# V39: navegação interna corrigida. Todos os atalhos trocam de tela dentro do app,
 # sem depender de âncoras HTML e sem obrigar o usuário a sair/recarregar a página.
 if "pagina" not in st.session_state:
     st.session_state.pagina = "🏠 Início"
@@ -189,7 +189,7 @@ if st.session_state.pagina == "⚙️ Config":
     st.markdown("<div class='section'>⚙️ Configurações rápidas</div>", unsafe_allow_html=True)
     st.write("**Feed principal:**", "BTG realtime" if btg_disponivel(st.secrets if hasattr(st, "secrets") else None) else "Yahoo Finance fallback")
     st.write("**Ciclo do scanner:** 5 segundos")
-    st.write("**Universo:** ações B3 + FIIs / imobiliário")
+    st.write("**Universo:** ações B3 + FIIs + ETFs + BDRs")
     st.info("💡 Para cotações de ações B3 mais próximas do tempo real, configure BTG_API_KEY nos Secrets do Streamlit Cloud. O Yahoo Finance permanece como fallback e pode ter atraso.")
     st.stop()
 
@@ -202,7 +202,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 st.caption("Ferramenta educacional. Indicadores, scores e cenários são hipotéticos e não constituem recomendação de investimento.")
-st.caption("🧭 V38 · Painel de demonstração · Preços dependem da fonte configurada · Nenhuma ordem real é enviada")
+st.caption("🧭 V39 · Painel de demonstração · Preços dependem da fonte configurada · Nenhuma ordem real é enviada")
 
 # V15: status operacional, qualidade do dado e horário da última atualização.
 def _status_mercado():
@@ -246,7 +246,7 @@ if st.session_state.pagina == "⚡ Scanner":
     st.caption("Escolha os ativos abaixo. O score é técnico e educacional; ele não é uma promessa de retorno.")
 elif st.session_state.pagina == "📊 Análise":
     st.markdown("<div class='section'>📊 Análise técnica</div>", unsafe_allow_html=True)
-    st.caption("Escolha qualquer ação ou FII cadastrado para abrir uma análise completa. O carregamento é feito sob demanda para evitar baixar o universo inteiro de uma vez.")
+    st.caption("Escolha qualquer ativo cadastrado para abrir uma análise completa. O carregamento é feito sob demanda para evitar baixar o universo inteiro de uma vez.")
 
 try:
     secrets = st.secrets
@@ -260,17 +260,19 @@ else:
     st.warning("🟡 Feed realtime ainda não configurado. O app está usando Yahoo Finance como fallback.")
     st.info("Para ativar o realtime, configure BTG_API_KEY em Manage app → Settings → Secrets no Streamlit Cloud.")
 
-# V38: Central de confiança dos dados. A interface deixa explícito o que é
+# V39: Central de confiança dos dados. A interface deixa explícito o que é
 # realtime, o que é fallback e quando o ciclo do painel foi executado.
 now_brasilia = pd.Timestamp.now(tz="America/Sao_Paulo")
 feed_nome = "BTG · realtime" if usar_btg else "Yahoo Finance · fallback"
 feed_nivel = "🟢 profissional/realtime configurado" if usar_btg else "🟡 fallback · pode ter atraso"
 st.markdown(f"""
 <div class='client-strip'>
-  <span><strong>📡 Central de dados V38</strong> · {feed_nome}</span>
+  <span><strong>📡 Central de dados V39</strong> · {feed_nome}</span>
   <span>{feed_nivel} · ciclo automático: 5 s · leitura: {now_brasilia.strftime('%d/%m/%Y %H:%M:%S')}</span>
 </div>
 """, unsafe_allow_html=True)
+
+st.markdown("""<div class='v22-hero'><div class='v22-kicker'>🚀 V39 · universo expandido</div><div class='v22-title'>Ações, FIIs, ETFs e BDRs em uma única leitura</div><div class='v22-sub'>Agora o scanner pode comparar diferentes tipos de ativos. A análise continua educacional e cada ativo mostra a categoria, a fonte do preço e os indicadores disponíveis.</div><div class='v22-grid'><div class='v22-tile'><strong>🏢 FIIs ampliados</strong><span>Mais opções imobiliárias e de renda.</span></div><div class='v22-tile'><strong>📦 ETFs</strong><span>Exposição a índices, temas e mercados.</span></div><div class='v22-tile'><strong>🌎 BDRs</strong><span>Empresas internacionais negociadas na B3.</span></div></div></div>""", unsafe_allow_html=True)
 
 ativos = list(ATIVOS_B3.keys())
 SETOR_ATIVO = {
@@ -284,21 +286,32 @@ SETOR_ATIVO = {
     "RENT3":"Transportes", "AZUL4":"Transportes", "BRFS3":"Alimentos", "SUZB3":"Papel e celulose", "KLBN11":"Papel e celulose",
     "XPML11":"FIIs / Imobiliário", "MXRF11":"FIIs / Imobiliário", "HGLG11":"FIIs / Imobiliário", "BTLG11":"FIIs / Imobiliário",
     "KNCR11":"FIIs / Imobiliário", "XPLG11":"FIIs / Imobiliário", "TRXF11":"FIIs / Imobiliário", "XPIN11":"FIIs / Imobiliário",
-    "VISC11":"FIIs / Imobiliário", "HSML11":"FIIs / Imobiliário", "MALL11":"FIIs / Imobiliário"
+    "VISC11":"FIIs / Imobiliário", "HSML11":"FIIs / Imobiliário", "MALL11":"FIIs / Imobiliário", "HGRU11":"FIIs / Imobiliário",
+    "VINO11":"FIIs / Imobiliário", "BCFF11":"FIIs / Imobiliário", "CPTS11":"FIIs / Imobiliário", "KNSC11":"FIIs / Imobiliário",
+    "RBRF11":"FIIs / Imobiliário", "RBRP11":"FIIs / Imobiliário", "PVBI11":"FIIs / Imobiliário", "RECT11":"FIIs / Imobiliário",
+    "DEVA11":"FIIs / Imobiliário", "IRDM11":"FIIs / Imobiliário", "KNIP11":"FIIs / Imobiliário", "HGRE11":"FIIs / Imobiliário",
+    "BRCR11":"FIIs / Imobiliário", "GGRC11":"FIIs / Imobiliário",
+    "BOVA11":"ETFs", "SMAL11":"ETFs", "IVVB11":"ETFs", "DIVO11":"ETFs", "GOLD11":"ETFs", "HASH11":"ETFs", "XINA11":"ETFs", "WRLD11":"ETFs",
+    "AAPL34":"BDRs", "MSFT34":"BDRs", "GOOG34":"BDRs", "AMZO34":"BDRs", "NVDC34":"BDRs", "TSLA34":"BDRs"
 }
-with st.expander("🧭 Filtro por setor", expanded=False):
+TIPO_ATIVO = {
+    **{a:"Ação" for a in ATIVOS_B3 if a in {"PETR3","PETR4","VALE3","ITUB3","ITUB4","ITSA4","BBAS3","BBDC3","BBDC4","WEGE3","ABEV3","MGLU3","B3SA3","RENT3","SUZB3","PRIO3","BBSE3","CMIG3","CMIG4","ELET3","ELET6","CPLE6","CPFE3","TAEE11","CSNA3","CMIN3","LREN3","EMBR3","TOTS3","RADL3","HYPE3","VIVT3","EGIE3","SBSP3","GGBR4","GOAU4","KLBN11","BRFS3","AZUL4"}},
+    **{a:"FII" for a in ATIVOS_B3 if SETOR_ATIVO.get(a)=="FIIs / Imobiliário"},
+    **{a:"ETF" for a in ATIVOS_B3 if SETOR_ATIVO.get(a)=="ETFs"},
+    **{a:"BDR" for a in ATIVOS_B3 if SETOR_ATIVO.get(a)=="BDRs"},
+}
+with st.expander("🧭 Filtro por setor e tipo", expanded=False):
     setores = sorted(set(SETOR_ATIVO.values()))
-    setores_sel = st.multiselect("Setores", setores, default=setores)
-    categorias = st.multiselect("Categoria", ["Ações", "FIIs / Imobiliário"], default=["Ações", "FIIs / Imobiliário"])
-    def _categoria(t):
-        return "FIIs / Imobiliário" if SETOR_ATIVO.get(t) == "FIIs / Imobiliário" else "Ações"
-    ativos = [a for a in ativos if SETOR_ATIVO.get(a, "Outros") in setores_sel and _categoria(a) in categorias]
+    setores_sel = st.multiselect("Setores / temas", setores, default=setores)
+    tipos = ["Ação", "FII", "ETF", "BDR"]
+    tipos_sel = st.multiselect("Tipo de ativo", tipos, default=tipos)
+    ativos = [a for a in ativos if SETOR_ATIVO.get(a, "Outros") in setores_sel and TIPO_ATIVO.get(a, "Outro") in tipos_sel]
 
 col1, col2, col3, col4 = st.columns(4)
 with col1:
     selecionados = st.multiselect(
         "Ativos monitorados", ativos,
-        default=["PETR4", "VALE3", "ITUB4", "BBAS3", "BBDC4", "CMIG4", "XPML11"],
+        default=["PETR4", "VALE3", "ITUB4", "BBAS3", "BBDC4", "CMIG4", "XPML11", "HGLG11", "BOVA11", "IVVB11", "AAPL34"],
     )
 with col2:
     intervalo = st.selectbox("Candles", ["1m", "5m", "15m", "30m", "1h"], index=1)
@@ -314,7 +327,7 @@ if st.button("🔄 Atualizar agora", use_container_width=False):
 # V14: parâmetros de gestão de risco + monitoramento de mudanças de sinal.
 with st.sidebar:
     st.markdown("### 🧭 Modo de leitura")
-    modo_leitura = st.radio("Como você quer visualizar?", ["🧑‍🏫 Iniciante", "🧠 Avançado"], index=0, key="modo_leitura_v36")
+    modo_leitura = st.radio("Como você quer visualizar?", ["🧑‍🏫 Iniciante", "🧠 Avançado"], index=0, key="modo_leitura_v39")
     st.caption("O modo Iniciante explica os indicadores em linguagem simples; o Avançado mostra mais detalhes técnicos.")
     st.markdown("### 🛡️ Gestão de risco")
     risco_reais = st.number_input("Risco máximo por operação (R$)", min_value=1.0, value=100.0, step=10.0)
@@ -331,8 +344,9 @@ def _carregar_ativo_cache(ticker, intervalo, usar_btg_flag, api_key_marker):
     return dados_yahoo(ticker, intervalo=intervalo)
 
 def carregar_ativo(ticker, intervalo):
-    marker = "btg" if usar_btg else "yahoo"
-    return _carregar_ativo_cache(ticker, intervalo, usar_btg, marker)
+    usar_btg_ativo = bool(usar_btg and TIPO_ATIVO.get(ticker) == "Ação")
+    marker = "btg" if usar_btg_ativo else "yahoo"
+    return _carregar_ativo_cache(ticker, intervalo, usar_btg_ativo, marker)
 
 
 def _idade_dado_minutos(index):
@@ -413,8 +427,8 @@ def painel():
     # V28: preço mais atual disponível por fonte. BTG é usado para ações B3 quando configurado;
     # FIIs e fallback usam Yahoo Finance. A interface informa a origem para não confundir
     # cotação de mercado com dado tick-by-tick.
-    acoes_sel = [t for t in selecionados if SETOR_ATIVO.get(t) != "FIIs / Imobiliário"]
-    fiis_sel = [t for t in selecionados if SETOR_ATIVO.get(t) == "FIIs / Imobiliário"]
+    acoes_sel = [t for t in selecionados if TIPO_ATIVO.get(t) == "Ação"]
+    outros_sel = [t for t in selecionados if TIPO_ATIVO.get(t) != "Ação"]
     if usar_btg and acoes_sel:
         try:
             realtime_prices.update(normalizar_cotacao_df(cotacoes_btg(acoes_sel, secrets=secrets)))
@@ -453,7 +467,7 @@ def painel():
             resultados.append({
                 "Ativo": ticker,
                 "Preço": preco,
-                "Categoria": "FII" if SETOR_ATIVO.get(ticker) == "FIIs / Imobiliário" else "Ação",
+                "Categoria": TIPO_ATIVO.get(ticker, "Outro"),
                 "Fonte preço": fonte_preco,
                 "RSI": float(ultima["RSI"]),
                 "MM20": float(ultima["MM20"]),
@@ -628,7 +642,7 @@ def painel():
     # Não altera o cálculo do Score; apenas transforma os dados já calculados em um resumo visual.
     st.markdown('<div class="section">📊 Dashboard inteligente</div>', unsafe_allow_html=True)
     if modo_leitura == "🧑‍🏫 Iniciante":
-        st.markdown("""<div class="v36-guide"><div class="v36-guide-title">🧭 Seu mapa rápido <span class="v36-badge">V38</span></div><div class="v36-guide-sub">Não precisa decorar indicadores. Comece por estes quatro pontos e só aprofunde quando quiser.</div><div class="v36-checks"><div class="v36-check"><b>1️⃣ Score</b><span>Mostra a força técnica do conjunto de sinais.</span></div><div class="v36-check"><b>2️⃣ Tendência</b><span>Compare preço e médias para entender a direção.</span></div><div class="v36-check"><b>3️⃣ Risco</b><span>Veja stop, distância e risco por unidade.</span></div><div class="v36-check"><b>4️⃣ Dados</b><span>Confira a fonte e a idade antes de interpretar.</span></div></div></div>""", unsafe_allow_html=True)
+        st.markdown("""<div class="v36-guide"><div class="v36-guide-title">🧭 Seu mapa rápido <span class="v36-badge">V39</span></div><div class="v36-guide-sub">Não precisa decorar indicadores. Comece por estes quatro pontos e só aprofunde quando quiser.</div><div class="v36-checks"><div class="v36-check"><b>1️⃣ Score</b><span>Mostra a força técnica do conjunto de sinais.</span></div><div class="v36-check"><b>2️⃣ Tendência</b><span>Compare preço e médias para entender a direção.</span></div><div class="v36-check"><b>3️⃣ Risco</b><span>Veja stop, distância e risco por unidade.</span></div><div class="v36-check"><b>4️⃣ Dados</b><span>Confira a fonte e a idade antes de interpretar.</span></div></div></div>""", unsafe_allow_html=True)
     if not valid_scores.empty:
         media_score_dash = float(valid_scores["Score"].mean())
         melhor_dash = valid_scores.sort_values(["Score", "R/R"], ascending=[False, False]).iloc[0]
@@ -669,13 +683,13 @@ def painel():
                 score_chart = valid_scores[["Ativo", "Score"]].sort_values("Score", ascending=True)
                 fig_score = px.bar(score_chart, x="Score", y="Ativo", orientation="h", title="Score por ativo", range_x=[0,100])
                 fig_score.update_layout(height=360, margin=dict(l=10,r=10,t=45,b=10))
-                st.plotly_chart(fig_score, use_container_width=True, key="dashboard_score_v36")
+                st.plotly_chart(fig_score, use_container_width=True, key="dashboard_score_v39")
             with chart2:
                 cat_counts = tabela["Categoria"].value_counts().reset_index()
                 cat_counts.columns = ["Categoria", "Quantidade"]
                 fig_cat = px.pie(cat_counts, names="Categoria", values="Quantidade", title="Universo monitorado por categoria", hole=.45)
                 fig_cat.update_layout(height=360, margin=dict(l=10,r=10,t=45,b=10), legend=dict(orientation="h"))
-                st.plotly_chart(fig_cat, use_container_width=True, key="dashboard_categoria_v36")
+                st.plotly_chart(fig_cat, use_container_width=True, key="dashboard_categoria_v39")
         except ImportError:
             st.caption("💡 O dashboard visual usa Plotly quando disponível; os indicadores principais continuam funcionando sem ele.")
 
@@ -734,7 +748,7 @@ def painel():
     )
 
     csv_scanner = tabela.to_csv(index=False).encode("utf-8")
-    st.download_button("⬇️ Exportar scanner CSV", csv_scanner, file_name="bolsaia_scanner_v36.csv", mime="text/csv", key="export_scanner_v36")
+    st.download_button("⬇️ Exportar scanner CSV", csv_scanner, file_name="bolsaia_scanner_v39.csv", mime="text/csv", key="export_scanner_v39")
 
     # V13: resumo de risco do scanner.
     st.markdown('<div class="section">🛡️ Gestão de risco por ativo</div>', unsafe_allow_html=True)
@@ -949,11 +963,11 @@ def painel():
                 st.caption("Quantidade é arredondada para baixo para não ultrapassar o orçamento de cada posição. Custos, impostos, liquidez e variações futuras não estão incluídos.")
 
     # V34: análise detalhada sob demanda de TODO o universo cadastrado.
-    # O app não precisa baixar todos os ativos ao mesmo tempo: o usuário escolhe um
-    # ativo/FII e os dados são carregados somente para aquele ativo.
+    # O app não precisa baixar todos os ativos ao mesmo tempo: o usuário escolhe um ativo
+    # e os dados são carregados somente para aquele ativo.
     universo_analise = list(dict.fromkeys(ativos))
     if universo_analise:
-        ativo = st.selectbox("🔎 Escolha qualquer ação ou FII para análise completa", universo_analise, key="analise_ativo_v35")
+        ativo = st.selectbox("🔎 Escolha qualquer ativo para análise completa", universo_analise, key="analise_ativo_v39")
         if ativo in detalhes:
             df, ultima, pontos, sinal, motivos, preco, candle_leitura, candle_padroes = detalhes[ativo]
         else:
@@ -996,7 +1010,7 @@ def painel():
         # Simulador simples de renda com dividendos. Usa valores históricos
         # efetivamente registrados; não é uma previsão de pagamento futuro.
         st.markdown("### 🧮 Quanto você receberia em dividendos?")
-        qtd_custom = st.number_input("Quantidade de ações", min_value=1, value=100, step=1, key=f"qtd_div_v36_{ativo}")
+        qtd_custom = st.number_input("Quantidade de ações", min_value=1, value=100, step=1, key=f"qtd_div_v39_{ativo}")
         ultimo_por_acao = div.get("ultimo_dividendo")
         total_12m_por_acao = div.get("dividendos_12m")
         if ultimo_por_acao is not None:
@@ -1069,9 +1083,9 @@ def painel():
         st.caption("Descubra, em uma simulação, quantas ações/cotas seriam necessárias para atingir um valor de lucro informado. O cálculo usa o preço observado e um preço-alvo técnico; não representa promessa de retorno.")
         calc1, calc2, calc3 = st.columns(3)
         with calc1:
-            objetivo_lucro = st.number_input("🎯 Quero buscar um lucro de (R$)", min_value=1.0, value=500.0, step=50.0, key=f"objetivo_lucro_v36_{ativo}")
+            objetivo_lucro = st.number_input("🎯 Quero buscar um lucro de (R$)", min_value=1.0, value=500.0, step=50.0, key=f"objetivo_lucro_v39_{ativo}")
         with calc2:
-            preco_alvo_sim = st.number_input("Preço-alvo simulado (R$)", min_value=0.01, value=max(float(plano["alvo"]), float(preco)+0.01), step=0.10, key=f"alvo_calc_v36_{ativo}")
+            preco_alvo_sim = st.number_input("Preço-alvo simulado (R$)", min_value=0.01, value=max(float(plano["alvo"]), float(preco)+0.01), step=0.10, key=f"alvo_calc_v39_{ativo}")
         with calc3:
             unidades_orcamento = int(capital_risco / preco) if preco else 0
             st.metric("Unidades pelo capital definido", f"{unidades_orcamento}")
@@ -1105,7 +1119,7 @@ def painel():
             dc3.metric("Capital ao preço observado", f"R$ {capital_div_meta:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
             st.caption("⚠️ Essa conta repete o valor histórico de dividendos dos últimos 12 meses apenas como simulação. Pagamentos futuros, valores e datas não são garantidos.")
 
-        st.markdown("### 📈 Gráfico profissional V38")
+        st.markdown("### 📈 Gráfico profissional V39")
         try:
             import plotly.graph_objects as go
             from plotly.subplots import make_subplots
@@ -1169,7 +1183,7 @@ def painel():
         st.caption("Fallback: Yahoo Finance. Ele não deve ser tratado como feed profissional em tempo real.")
 
 
-st.markdown("<div class='footer'>BolsaIA V38 · Inteligência de Mercado · Demonstração educacional · Dados dependem da fonte configurada</div>", unsafe_allow_html=True)
+st.markdown("<div class='footer'>BolsaIA V39 · Inteligência de Mercado · Demonstração educacional · Dados dependem da fonte configurada</div>", unsafe_allow_html=True)
 
 if hasattr(st, "fragment"):
     @st.fragment(run_every="5s")
