@@ -13,13 +13,13 @@ from analisador import analisar, analisar_candles, calcular_plano
 from dividendos import obter_dividendos_yahoo
 
 st.set_page_config(
-    page_title="BolsaIA V39 | Inteligência de Mercado",
+    page_title="BolsaIA V40 Consolidada | Inteligência de Mercado",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# V29 — identidade visual premium baseada na nova marca BolsaIA; foco em apresentação comercial.
+# V40 CONSOLIDADA — identidade visual e experiência mobile refinadas. baseada na nova marca BolsaIA; foco em apresentação comercial.
 _logo_path = Path(__file__).with_name("logo.png")
 _logo_b64 = base64.b64encode(_logo_path.read_bytes()).decode("ascii") if _logo_path.exists() else ""
 _hero_html = """
@@ -101,6 +101,23 @@ div[data-testid="stMetric"] { background:rgba(13,24,42,.82); border:1px solid rg
 @media (max-width:700px) { .quick-nav { grid-template-columns:repeat(2,1fr); } }
 .footer { margin-top:1.8rem; padding:1rem 0 .2rem; border-top:1px solid rgba(255,255,255,.08); color:#71839b; font-size:.74rem; text-align:center; }
 @media (max-width:700px) { .trust-row { grid-template-columns:1fr; } }
+
+/* V40 — correção de rolagem no celular. Gráficos interativos podem capturar o gesto de arrastar;
+   estes estilos devolvem prioridade à rolagem vertical da página e evitam overflow horizontal. */
+html, body { overflow-x:hidden !important; }
+.stApp, [data-testid="stAppViewContainer"], [data-testid="stAppViewBlockContainer"] { overflow-x:hidden !important; }
+[data-testid="stAppViewContainer"] { touch-action: pan-y !important; }
+.stApp .js-plotly-plot, .stApp .plot-container, .stApp .svg-container { max-width:100% !important; }
+@media (max-width:700px) {
+  .stApp .js-plotly-plot { touch-action: pan-y !important; }
+  .stApp .stPlotlyChart { margin-bottom:.65rem; touch-action: pan-y !important; }
+  /* No celular, os gráficos desta versão são leitura: não capturam o dedo.
+     Isso evita o travamento/"página presa" relatado no teste da V40. */
+  .stApp .stPlotlyChart .js-plotly-plot,
+  .stApp .stPlotlyChart .plotly,
+  .stApp .stPlotlyChart .main-svg { pointer-events:none !important; }
+  [data-testid="stDataFrame"] { max-width:100% !important; }
+}
 .dashboard-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:.65rem; margin:.8rem 0 1rem; }
 .dash-card { padding:.85rem .9rem; border-radius:15px; background:linear-gradient(145deg,rgba(17,31,53,.92),rgba(10,17,29,.92)); border:1px solid rgba(96,170,255,.13); min-height:92px; }
 .dash-kicker { color:#8fa6c5; font-size:.68rem; font-weight:900; text-transform:uppercase; letter-spacing:.07em; }
@@ -125,7 +142,7 @@ div[data-testid="stMetric"] { background:rgba(13,24,42,.82); border:1px solid rg
   <div class="brand-row">
     <img class="brand-logo" src="data:image/png;base64,LOGO_B64" />
     <div>
-      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V39</span></h1>
+      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V40</span></h1>
       <div class="tagline">Inteligência de mercado para análise técnica, radar e gestão de risco.</div>
       <div class="mini"><span class="chip">⚡ Scanner inteligente</span><span class="chip">📊 Análise técnica</span><span class="chip green">🛡️ Carteira simulada</span></div>
     </div>
@@ -135,7 +152,7 @@ div[data-testid="stMetric"] { background:rgba(13,24,42,.82); border:1px solid rg
 _hero_html = _hero_html.replace("LOGO_B64", _logo_b64)
 st.markdown(_hero_html, unsafe_allow_html=True)
 
-# V39: navegação interna corrigida. Todos os atalhos trocam de tela dentro do app,
+# V40 CONSOLIDADA: navegação interna e rolagem mobile corrigidas. Todos os atalhos trocam de tela dentro do app,
 # sem depender de âncoras HTML e sem obrigar o usuário a sair/recarregar a página.
 if "pagina" not in st.session_state:
     st.session_state.pagina = "🏠 Início"
@@ -202,7 +219,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 st.caption("Ferramenta educacional. Indicadores, scores e cenários são hipotéticos e não constituem recomendação de investimento.")
-st.caption("🧭 V39 · Painel de demonstração · Preços dependem da fonte configurada · Nenhuma ordem real é enviada")
+st.caption("🧭 V40 · Painel de demonstração · Preços dependem da fonte configurada · Nenhuma ordem real é enviada")
 
 # V15: status operacional, qualidade do dado e horário da última atualização.
 def _status_mercado():
@@ -260,19 +277,19 @@ else:
     st.warning("🟡 Feed realtime ainda não configurado. O app está usando Yahoo Finance como fallback.")
     st.info("Para ativar o realtime, configure BTG_API_KEY em Manage app → Settings → Secrets no Streamlit Cloud.")
 
-# V39: Central de confiança dos dados. A interface deixa explícito o que é
+# V40 CONSOLIDADA: Central de confiança dos dados. A interface deixa explícito o que é
 # realtime, o que é fallback e quando o ciclo do painel foi executado.
 now_brasilia = pd.Timestamp.now(tz="America/Sao_Paulo")
 feed_nome = "BTG · realtime" if usar_btg else "Yahoo Finance · fallback"
 feed_nivel = "🟢 profissional/realtime configurado" if usar_btg else "🟡 fallback · pode ter atraso"
 st.markdown(f"""
 <div class='client-strip'>
-  <span><strong>📡 Central de dados V39</strong> · {feed_nome}</span>
+  <span><strong>📡 Central de dados V40</strong> · {feed_nome}</span>
   <span>{feed_nivel} · ciclo automático: 5 s · leitura: {now_brasilia.strftime('%d/%m/%Y %H:%M:%S')}</span>
 </div>
 """, unsafe_allow_html=True)
 
-st.markdown("""<div class='v22-hero'><div class='v22-kicker'>🚀 V39 · universo expandido</div><div class='v22-title'>Ações, FIIs, ETFs e BDRs em uma única leitura</div><div class='v22-sub'>Agora o scanner pode comparar diferentes tipos de ativos. A análise continua educacional e cada ativo mostra a categoria, a fonte do preço e os indicadores disponíveis.</div><div class='v22-grid'><div class='v22-tile'><strong>🏢 FIIs ampliados</strong><span>Mais opções imobiliárias e de renda.</span></div><div class='v22-tile'><strong>📦 ETFs</strong><span>Exposição a índices, temas e mercados.</span></div><div class='v22-tile'><strong>🌎 BDRs</strong><span>Empresas internacionais negociadas na B3.</span></div></div></div>""", unsafe_allow_html=True)
+st.markdown("""<div class='v22-hero'><div class='v22-kicker'>🚀 V40 CONSOLIDADA · universo expandido</div><div class='v22-title'>Ações, FIIs, ETFs e BDRs em uma única leitura</div><div class='v22-sub'>Agora o scanner pode comparar diferentes tipos de ativos. A análise continua educacional e cada ativo mostra a categoria, a fonte do preço e os indicadores disponíveis.</div><div class='v22-grid'><div class='v22-tile'><strong>🏢 FIIs ampliados</strong><span>Mais opções imobiliárias e de renda.</span></div><div class='v22-tile'><strong>📦 ETFs</strong><span>Exposição a índices, temas e mercados.</span></div><div class='v22-tile'><strong>🌎 BDRs</strong><span>Empresas internacionais negociadas na B3.</span></div></div></div>""", unsafe_allow_html=True)
 
 ativos = list(ATIVOS_B3.keys())
 SETOR_ATIVO = {
@@ -327,7 +344,7 @@ if st.button("🔄 Atualizar agora", use_container_width=False):
 # V14: parâmetros de gestão de risco + monitoramento de mudanças de sinal.
 with st.sidebar:
     st.markdown("### 🧭 Modo de leitura")
-    modo_leitura = st.radio("Como você quer visualizar?", ["🧑‍🏫 Iniciante", "🧠 Avançado"], index=0, key="modo_leitura_v39")
+    modo_leitura = st.radio("Como você quer visualizar?", ["🧑‍🏫 Iniciante", "🧠 Avançado"], index=0, key="modo_leitura_v40")
     st.caption("O modo Iniciante explica os indicadores em linguagem simples; o Avançado mostra mais detalhes técnicos.")
     st.markdown("### 🛡️ Gestão de risco")
     risco_reais = st.number_input("Risco máximo por operação (R$)", min_value=1.0, value=100.0, step=10.0)
@@ -638,11 +655,11 @@ def painel():
   <div class="muted" style="margin-top:.35rem;">{leitura25} · {motivo25}</div>
 </div>
 """, unsafe_allow_html=True)
-    # V35: dashboard profissional para leitura rápida, pensado para iniciantes.
+    # V40: dashboard profissional para leitura rápida, pensado para iniciantes.
     # Não altera o cálculo do Score; apenas transforma os dados já calculados em um resumo visual.
     st.markdown('<div class="section">📊 Dashboard inteligente</div>', unsafe_allow_html=True)
     if modo_leitura == "🧑‍🏫 Iniciante":
-        st.markdown("""<div class="v36-guide"><div class="v36-guide-title">🧭 Seu mapa rápido <span class="v36-badge">V39</span></div><div class="v36-guide-sub">Não precisa decorar indicadores. Comece por estes quatro pontos e só aprofunde quando quiser.</div><div class="v36-checks"><div class="v36-check"><b>1️⃣ Score</b><span>Mostra a força técnica do conjunto de sinais.</span></div><div class="v36-check"><b>2️⃣ Tendência</b><span>Compare preço e médias para entender a direção.</span></div><div class="v36-check"><b>3️⃣ Risco</b><span>Veja stop, distância e risco por unidade.</span></div><div class="v36-check"><b>4️⃣ Dados</b><span>Confira a fonte e a idade antes de interpretar.</span></div></div></div>""", unsafe_allow_html=True)
+        st.markdown("""<div class="v36-guide"><div class="v36-guide-title">🧭 Seu mapa rápido <span class="v36-badge">V40</span></div><div class="v36-guide-sub">Não precisa decorar indicadores. Comece por estes quatro pontos e só aprofunde quando quiser.</div><div class="v36-checks"><div class="v36-check"><b>1️⃣ Score</b><span>Mostra a força técnica do conjunto de sinais.</span></div><div class="v36-check"><b>2️⃣ Tendência</b><span>Compare preço e médias para entender a direção.</span></div><div class="v36-check"><b>3️⃣ Risco</b><span>Veja stop, distância e risco por unidade.</span></div><div class="v36-check"><b>4️⃣ Dados</b><span>Confira a fonte e a idade antes de interpretar.</span></div></div></div>""", unsafe_allow_html=True)
     if not valid_scores.empty:
         media_score_dash = float(valid_scores["Score"].mean())
         melhor_dash = valid_scores.sort_values(["Score", "R/R"], ascending=[False, False]).iloc[0]
@@ -683,13 +700,13 @@ def painel():
                 score_chart = valid_scores[["Ativo", "Score"]].sort_values("Score", ascending=True)
                 fig_score = px.bar(score_chart, x="Score", y="Ativo", orientation="h", title="Score por ativo", range_x=[0,100])
                 fig_score.update_layout(height=360, margin=dict(l=10,r=10,t=45,b=10))
-                st.plotly_chart(fig_score, use_container_width=True, key="dashboard_score_v39")
+                st.plotly_chart(fig_score, use_container_width=True, key="dashboard_score_v40c", config={"staticPlot": True, "displayModeBar": False})
             with chart2:
                 cat_counts = tabela["Categoria"].value_counts().reset_index()
                 cat_counts.columns = ["Categoria", "Quantidade"]
                 fig_cat = px.pie(cat_counts, names="Categoria", values="Quantidade", title="Universo monitorado por categoria", hole=.45)
                 fig_cat.update_layout(height=360, margin=dict(l=10,r=10,t=45,b=10), legend=dict(orientation="h"))
-                st.plotly_chart(fig_cat, use_container_width=True, key="dashboard_categoria_v39")
+                st.plotly_chart(fig_cat, use_container_width=True, key="dashboard_categoria_v40c", config={"staticPlot": True, "displayModeBar": False})
         except ImportError:
             st.caption("💡 O dashboard visual usa Plotly quando disponível; os indicadores principais continuam funcionando sem ele.")
 
@@ -748,7 +765,7 @@ def painel():
     )
 
     csv_scanner = tabela.to_csv(index=False).encode("utf-8")
-    st.download_button("⬇️ Exportar scanner CSV", csv_scanner, file_name="bolsaia_scanner_v39.csv", mime="text/csv", key="export_scanner_v39")
+    st.download_button("⬇️ Exportar scanner CSV", csv_scanner, file_name="bolsaia_scanner_v40.csv", mime="text/csv", key="export_scanner_v40")
 
     # V13: resumo de risco do scanner.
     st.markdown('<div class="section">🛡️ Gestão de risco por ativo</div>', unsafe_allow_html=True)
@@ -967,7 +984,7 @@ def painel():
     # e os dados são carregados somente para aquele ativo.
     universo_analise = list(dict.fromkeys(ativos))
     if universo_analise:
-        ativo = st.selectbox("🔎 Escolha qualquer ativo para análise completa", universo_analise, key="analise_ativo_v39")
+        ativo = st.selectbox("🔎 Escolha qualquer ativo para análise completa", universo_analise, key="analise_ativo_v40")
         if ativo in detalhes:
             df, ultima, pontos, sinal, motivos, preco, candle_leitura, candle_padroes = detalhes[ativo]
         else:
@@ -1083,9 +1100,9 @@ def painel():
         st.caption("Descubra, em uma simulação, quantas ações/cotas seriam necessárias para atingir um valor de lucro informado. O cálculo usa o preço observado e um preço-alvo técnico; não representa promessa de retorno.")
         calc1, calc2, calc3 = st.columns(3)
         with calc1:
-            objetivo_lucro = st.number_input("🎯 Quero buscar um lucro de (R$)", min_value=1.0, value=500.0, step=50.0, key=f"objetivo_lucro_v39_{ativo}")
+            objetivo_lucro = st.number_input("🎯 Quero buscar um lucro de (R$)", min_value=1.0, value=500.0, step=50.0, key=f"objetivo_lucro_v40c_{ativo}")
         with calc2:
-            preco_alvo_sim = st.number_input("Preço-alvo simulado (R$)", min_value=0.01, value=max(float(plano["alvo"]), float(preco)+0.01), step=0.10, key=f"alvo_calc_v39_{ativo}")
+            preco_alvo_sim = st.number_input("Preço-alvo simulado (R$)", min_value=0.01, value=max(float(plano["alvo"]), float(preco)+0.01), step=0.10, key=f"alvo_calc_v40c_{ativo}")
         with calc3:
             unidades_orcamento = int(capital_risco / preco) if preco else 0
             st.metric("Unidades pelo capital definido", f"{unidades_orcamento}")
@@ -1119,7 +1136,7 @@ def painel():
             dc3.metric("Capital ao preço observado", f"R$ {capital_div_meta:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
             st.caption("⚠️ Essa conta repete o valor histórico de dividendos dos últimos 12 meses apenas como simulação. Pagamentos futuros, valores e datas não são garantidos.")
 
-        st.markdown("### 📈 Gráfico profissional V39")
+        st.markdown("### 📈 Gráfico profissional V40 Consolidado")
         try:
             import plotly.graph_objects as go
             from plotly.subplots import make_subplots
@@ -1137,12 +1154,14 @@ def painel():
             if "MM200" in grafico_df:
                 fig.add_trace(go.Scatter(x=grafico_df.index, y=grafico_df["MM200"], name="MM200", mode="lines"), row=1, col=1)
             fig.add_trace(go.Bar(x=grafico_df.index, y=grafico_df["Volume"], name="Volume", opacity=0.55), row=2, col=1)
-            fig.update_layout(height=650, xaxis_rangeslider_visible=False, hovermode="x unified",
+            fig.update_layout(height=650, xaxis_rangeslider_visible=False, hovermode="x unified", dragmode=False,
                               margin=dict(l=10, r=10, t=30, b=10), legend=dict(orientation="h"))
             fig.update_yaxes(title_text="Preço (R$)", row=1, col=1)
             fig.update_yaxes(title_text="Volume", row=2, col=1)
             fig.update_xaxes(title_text="Tempo", row=2, col=1)
-            st.plotly_chart(fig, use_container_width=True, key=f"candles_v36_{ativo}")
+            st.plotly_chart(fig, use_container_width=True, key=f"candles_v40c_{ativo}",
+                            config={"staticPlot": True, "displayModeBar": False, "scrollZoom": False})
+            st.caption("📱 V40 consolidada: gráfico em modo leitura para não bloquear a rolagem no celular.")
 
             st.markdown("### 🎛️ Leitura rápida do gráfico")
             g1, g2, g3, g4 = st.columns(4)
@@ -1162,7 +1181,6 @@ def painel():
             st.caption("O gráfico é uma ferramenta educacional. Médias, volume e candles ajudam a interpretar o histórico, mas não garantem movimentos futuros.")
         except ImportError:
             st.warning("Gráfico profissional requer Plotly. Adicione 'plotly' ao requirements.txt.")
-        st.line_chart(df[["Close", "MM20", "MM50"]].dropna())
         if modo_leitura == "🧠 Avançado":
             with st.expander("🧠 Detalhes técnicos do modelo", expanded=False):
                 st.write(f"RSI: {float(ultima['RSI']):.1f}")

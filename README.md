@@ -1,26 +1,28 @@
-# BolsaIA V39
+# BolsaIA V40 Consolidada
 
-V39 amplia o universo do BolsaIA para além de ações, mantendo a base funcional da V38.
+Versão consolidada das ideias construídas até a V40, com foco em uso simples, análise técnica, dados, risco e experiência mobile.
 
-## Novidades da V39
+## O que está reunido
+- Atalhos internos: Início, Scanner, Análise, Config e Login.
+- Navegação interna com botão de retorno, sem precisar sair do app.
+- Login demonstrativo por sessão.
+- Configurações rápidas.
+- Scanner com ações, FIIs/imobiliário, ETFs e BDRs.
+- Inclusão de ativos como CMIG3/CMIG4 e XPML11, além de outros FIIs.
+- Filtros por setor/tema e tipo de ativo.
+- Score técnico de 0 a 100 e classificação do sinal.
+- Análise detalhada sob demanda para qualquer ativo do universo.
+- RSI, MM20, MM50, MM200, MACD, ADX, ATR, volume e leitura de candles.
+- Plano técnico educacional com alvo, stop, risco/retorno e confiança técnica.
+- Calculadora de risco por operação e risco agregado.
+- Calculadora de objetivo de lucro: quantidade de ações/cotas e capital estimado.
+- Simulação de carteira e carteira personalizada por orçamento/pesos.
+- Histórico de dividendos e calculadora de meta de dividendos quando houver dados.
+- Gráfico profissional em modo leitura.
+- Central de dados com fonte do preço e status do feed.
+- BTG realtime opcional para ações quando `BTG_API_KEY` estiver configurada; Yahoo Finance como fallback.
+- Atualização manual para evitar recarregamentos desnecessários.
+- Correção reforçada do bug de rolagem no celular: gráficos não capturam o gesto de arrastar e o overflow horizontal é bloqueado.
 
-- **FIIs ampliados**: mais fundos imobiliários no universo monitorado.
-- **ETFs**: BOVA11, SMAL11, IVVB11, DIVO11, GOLD11, HASH11, XINA11 e WRLD11.
-- **BDRs**: AAPL34, MSFT34, GOOG34, AMZO34, NVDC34 e TSLA34.
-- **Filtro por tipo de ativo**: Ação, FII, ETF e BDR.
-- **Análise detalhada sob demanda** para qualquer ativo cadastrado.
-- **Scanner multiclasse**: o campo Categoria agora diferencia Ação, FII, ETF e BDR.
-- **Realtime mais seguro**: BTG continua reservado para ações quando configurado; demais tipos usam Yahoo Finance como fonte de cotação/candles.
-- **Dashboard por categoria** para visualizar a composição do universo monitorado.
-- Mantida a experiência em **modo Iniciante / Avançado**, gestão de risco, carteira simulada, dividendos e calculadora de objetivo de lucro.
-
-## Execução
-
-```bash
-pip install -r requirements.txt
-streamlit run app.py
-```
-
-## Realtime B3
-
-Para usar o feed BTG, configure `BTG_API_KEY` nos Secrets do Streamlit Cloud. Sem a chave, o app utiliza Yahoo Finance como fallback. A disponibilidade e latência dependem da fonte; o painel é educacional e não constitui recomendação de investimento.
+## Observação
+O aplicativo é educacional/demonstrativo e não envia ordens reais. Preços do Yahoo podem ter atraso; o modo BTG depende da configuração da API.
