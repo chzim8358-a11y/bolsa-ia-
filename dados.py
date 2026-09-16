@@ -3,10 +3,7 @@ from datetime import date, timedelta
 import pandas as pd
 import yfinance as yf
 
-ATIVOS_B3={"PETR3":"PETR3.SA","PETR4":"PETR4.SA","VALE3":"VALE3.SA","ITUB3":"ITUB3.SA","ITUB4":"ITUB4.SA","ITSA4":"ITSA4.SA","BBAS3":"BBAS3.SA","BBDC3":"BBDC3.SA","BBDC4":"BBDC4.SA","WEGE3":"WEGE3.SA","ABEV3":"ABEV3.SA","MGLU3":"MGLU3.SA","B3SA3":"B3SA3.SA","RENT3":"RENT3.SA","SUZB3":"SUZB3.SA","PRIO3":"PRIO3.SA","BBSE3":"BBSE3.SA","CMIG3":"CMIG3.SA","CMIG4":"CMIG4.SA","ELET3":"ELET3.SA","ELET6":"ELET6.SA","CPLE6":"CPLE6.SA","CPFE3":"CPFE3.SA","TAEE11":"TAEE11.SA","CSNA3":"CSNA3.SA","CMIN3":"CMIN3.SA","LREN3":"LREN3.SA","EMBR3":"EMBR3.SA","TOTS3":"TOTS3.SA","RADL3":"RADL3.SA","HYPE3":"HYPE3.SA","VIVT3":"VIVT3.SA","EGIE3":"EGIE3.SA","SBSP3":"SBSP3.SA","GGBR4":"GGBR4.SA","GOAU4":"GOAU4.SA","KLBN11":"KLBN11.SA","BRFS3":"BRFS3.SA","AZUL4":"AZUL4.SA","XPML11":"XPML11.SA","MXRF11":"MXRF11.SA","HGLG11":"HGLG11.SA","BTLG11":"BTLG11.SA","KNCR11":"KNCR11.SA","XPLG11":"XPLG11.SA","TRXF11":"TRXF11.SA","XPIN11":"XPIN11.SA","VISC11":"VISC11.SA","HSML11":"HSML11.SA","MALL11":"MALL11.SA",
-"HGRU11":"HGRU11.SA","VINO11":"VINO11.SA","BCFF11":"BCFF11.SA","CPTS11":"CPTS11.SA","KNSC11":"KNSC11.SA","RBRF11":"RBRF11.SA","RBRP11":"RBRP11.SA","PVBI11":"PVBI11.SA","RECT11":"RECT11.SA","DEVA11":"DEVA11.SA","IRDM11":"IRDM11.SA","KNIP11":"KNIP11.SA","HGRE11":"HGRE11.SA","BRCR11":"BRCR11.SA","GGRC11":"GGRC11.SA",
-"BOVA11":"BOVA11.SA","SMAL11":"SMAL11.SA","IVVB11":"IVVB11.SA","DIVO11":"DIVO11.SA","GOLD11":"GOLD11.SA","HASH11":"HASH11.SA","XINA11":"XINA11.SA","WRLD11":"WRLD11.SA",
-"AAPL34":"AAPL34.SA","MSFT34":"MSFT34.SA","GOOG34":"GOOG34.SA","AMZO34":"AMZO34.SA","NVDC34":"NVDC34.SA","TSLA34":"TSLA34.SA"}
+ATIVOS_B3={"PETR3":"PETR3.SA","PETR4":"PETR4.SA","VALE3":"VALE3.SA","ITUB3":"ITUB3.SA","ITUB4":"ITUB4.SA","ITSA4":"ITSA4.SA","BBAS3":"BBAS3.SA","BBDC3":"BBDC3.SA","BBDC4":"BBDC4.SA","WEGE3":"WEGE3.SA","ABEV3":"ABEV3.SA","MGLU3":"MGLU3.SA","B3SA3":"B3SA3.SA","RENT3":"RENT3.SA","SUZB3":"SUZB3.SA","PRIO3":"PRIO3.SA","BBSE3":"BBSE3.SA","CMIG3":"CMIG3.SA","CMIG4":"CMIG4.SA","ELET3":"ELET3.SA","ELET6":"ELET6.SA","CPLE6":"CPLE6.SA","CPFE3":"CPFE3.SA","TAEE11":"TAEE11.SA","CSNA3":"CSNA3.SA","CMIN3":"CMIN3.SA","LREN3":"LREN3.SA","EMBR3":"EMBR3.SA","TOTS3":"TOTS3.SA","RADL3":"RADL3.SA","HYPE3":"HYPE3.SA","VIVT3":"VIVT3.SA","EGIE3":"EGIE3.SA","SBSP3":"SBSP3.SA","GGBR4":"GGBR4.SA","GOAU4":"GOAU4.SA","KLBN11":"KLBN11.SA","BRFS3":"BRFS3.SA","AZUL4":"AZUL4.SA","XPML11":"XPML11.SA","MXRF11":"MXRF11.SA","HGLG11":"HGLG11.SA","BTLG11":"BTLG11.SA","KNCR11":"KNCR11.SA","XPLG11":"XPLG11.SA","TRXF11":"TRXF11.SA","XPIN11":"XPIN11.SA","VISC11":"VISC11.SA","HSML11":"HSML11.SA","MALL11":"MALL11.SA","BOVA11":"BOVA11.SA","SMAL11":"SMAL11.SA","IVVB11":"IVVB11.SA","DIVO11":"DIVO11.SA","GOLD11":"GOLD11.SA","HASH11":"HASH11.SA","XINA11":"XINA11.SA","WRLD11":"WRLD11.SA","AAPL34":"AAPL34.SA","MSFT34":"MSFT34.SA","GOOG34":"GOOG34.SA","AMZO34":"AMZO34.SA","NVDC34":"NVDC34.SA","TSLA34":"TSLA34.SA"}
 INTERVALOS={"1m":"1m","5m":"5m","15m":"15m","30m":"30m","1h":"1h"}
 YAHOO_PERIODOS={"1m":"5d","5m":"30d","15m":"60d","30m":"60d","1h":"6mo"}
 
@@ -99,3 +96,32 @@ def cotacoes_yahoo_realtime(tickers):
         except Exception:
             pass
     return out
+
+
+def atualizar_cotacoes_engine(tickers, engine, secrets=None):
+    """Atualiza o motor com a melhor fonte disponível e devolve seu snapshot."""
+    tickers=list(tickers)
+    if btg_disponivel(secrets):
+        try:
+            q=cotacoes_btg(tickers, secrets=secrets)
+            out={}
+            if isinstance(q,pd.DataFrame):
+                # tenta localizar a coluna de último preço de forma tolerante
+                lower={str(c).lower():c for c in q.columns}
+                pc=next((lower[k] for k in ("last_price","last","price","close") if k in lower),None)
+                tc=next((lower[k] for k in ("ticker","symbol","code") if k in lower),None)
+                if pc:
+                    if tc:
+                        for _,r in q.iterrows():
+                            if pd.notna(r[pc]): out[str(r[tc]).upper()]=float(r[pc])
+                    elif len(q)==len(tickers):
+                        for t,v in zip(tickers,q[pc]):
+                            if pd.notna(v): out[t]=float(v)
+            if out:
+                engine.update(out, source="BTG realtime")
+                return engine.snapshot(tickers)
+        except Exception:
+            pass
+    out=cotacoes_yahoo_realtime(tickers)
+    engine.update(out, source="Yahoo fallback")
+    return engine.snapshot(tickers)

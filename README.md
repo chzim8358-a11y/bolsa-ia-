@@ -1,28 +1,42 @@
-# BolsaIA V40 Consolidada
+# BolsaIA V41
 
-Versão consolidada das ideias construídas até a V40, com foco em uso simples, análise técnica, dados, risco e experiência mobile.
+## Grande mudança: BolsaIA Real-Time Engine 📡⚡
 
-## O que está reunido
-- Atalhos internos: Início, Scanner, Análise, Config e Login.
-- Navegação interna com botão de retorno, sem precisar sair do app.
-- Login demonstrativo por sessão.
-- Configurações rápidas.
-- Scanner com ações, FIIs/imobiliário, ETFs e BDRs.
-- Inclusão de ativos como CMIG3/CMIG4 e XPML11, além de outros FIIs.
-- Filtros por setor/tema e tipo de ativo.
-- Score técnico de 0 a 100 e classificação do sinal.
-- Análise detalhada sob demanda para qualquer ativo do universo.
-- RSI, MM20, MM50, MM200, MACD, ADX, ATR, volume e leitura de candles.
-- Plano técnico educacional com alvo, stop, risco/retorno e confiança técnica.
-- Calculadora de risco por operação e risco agregado.
-- Calculadora de objetivo de lucro: quantidade de ações/cotas e capital estimado.
-- Simulação de carteira e carteira personalizada por orçamento/pesos.
-- Histórico de dividendos e calculadora de meta de dividendos quando houver dados.
-- Gráfico profissional em modo leitura.
-- Central de dados com fonte do preço e status do feed.
-- BTG realtime opcional para ações quando `BTG_API_KEY` estiver configurada; Yahoo Finance como fallback.
-- Atualização manual para evitar recarregamentos desnecessários.
-- Correção reforçada do bug de rolagem no celular: gráficos não capturam o gesto de arrastar e o overflow horizontal é bloqueado.
+A V41 introduz um motor local de cotações em memória. Ele recebe preços reais de um provedor configurado (BTG quando disponível, Yahoo como fallback), registra o horário da atualização e entrega um snapshot reutilizável ao app. Isso prepara a arquitetura para atualizações incrementais e futuras conexões WebSocket.
 
-## Observação
-O aplicativo é educacional/demonstrativo e não envia ordens reais. Preços do Yahoo podem ter atraso; o modo BTG depende da configuração da API.
+### Novos recursos
+- Cache de cotações com TTL e status `fresh/stale`
+- Registro de fonte e horário da última atualização
+- Health check do motor
+- Atualização incremental sem depender de recarregar toda a interface
+- Mantidos Scanner, análise, ações, FIIs, ETFs, BDRs, risco, carteira, dividendos e navegação existentes
+
+> O motor não cria preços. Ele apenas organiza e distribui dados recebidos de uma fonte real.
+# BolsaIA V39
+
+V39 mantém a base funcional da V37 e adiciona uma Central de confiança dos dados, deixando mais claro para o usuário:
+
+- qual fonte está sendo usada;
+- se o feed BTG realtime está configurado;
+- quando o ciclo do painel foi executado;
+- que o Yahoo Finance é fallback e pode ter atraso;
+- que nenhum dado ou sinal representa garantia de retorno.
+
+## Execução
+
+```bash
+pip install -r requirements.txt
+streamlit run app.py
+```
+
+## Realtime B3
+
+Para usar o feed BTG, configure `BTG_API_KEY` nos Secrets do Streamlit Cloud. Sem a chave, o app utiliza Yahoo Finance como fallback.
+
+
+## V39 — expansão do universo
+- Scanner por categoria: Ações, FIIs / Imobiliário, ETFs e BDRs.
+- Novo universo de ETFs e BDRs para análise sob demanda.
+- Filtros por categoria mantidos junto aos setores.
+- Análise e cotação seguem a arquitetura existente; BTG permanece voltado às ações B3 quando configurado.
+- Interface preparada para evolução das categorias sem perder a navegação da V37/V38.
