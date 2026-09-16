@@ -132,7 +132,7 @@ div[data-testid="stMetric"] { background:rgba(13,24,42,.82); border:1px solid rg
   <div class="brand-row">
     <img class="brand-logo" src="data:image/png;base64,LOGO_B64" />
     <div>
-      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V39</span></h1>
+      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V42</span></h1>
       <div class="tagline">Inteligência de mercado para análise técnica, radar e gestão de risco.</div>
       <div class="mini"><span class="chip">⚡ Scanner inteligente</span><span class="chip">📊 Análise técnica</span><span class="chip green">🛡️ Carteira simulada</span></div>
     </div>
@@ -209,7 +209,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 st.caption("Ferramenta educacional. Indicadores, scores e cenários são hipotéticos e não constituem recomendação de investimento.")
-st.caption("🧭 V41 · Motor Real-Time local · Preços dependem da fonte configurada · Nenhuma ordem real é enviada")
+st.caption("🧭 V42 · Motor Real-Time local + BolsaIA Paper Trading · Nenhuma ordem real é enviada")
 
 # V41: painel do motor real-time local.
 try:
@@ -827,6 +827,97 @@ def painel():
         st.download_button("⬇️ Exportar alertas CSV", csv_alertas, file_name="bolsaia_alertas_v18.csv", mime="text/csv")
     else:
         st.info("Nenhum alerta registrado nesta sessão ainda. O histórico começa quando um ativo atingir o limiar configurado.")
+
+    # V42: Paper Trading — compra/venda SIMULADA, sem corretora e sem dinheiro real.
+    # Grande mudança da V42: transforma a carteira em um pequeno ambiente de treinamento,
+    # com caixa, ordens, posições, preço médio e P/L marcado pelo preço atual.
+    st.markdown('<div class="section">🎮 BolsaIA Paper Trading</div>', unsafe_allow_html=True)
+    st.caption("Simule compras e vendas usando as cotações disponíveis. Isso não envia ordens para corretora nem movimenta dinheiro real.")
+    if "paper_cash" not in st.session_state:
+        st.session_state.paper_cash = 100000.0
+    if "paper_positions" not in st.session_state:
+        st.session_state.paper_positions = {}
+    if "paper_orders" not in st.session_state:
+        st.session_state.paper_orders = []
+
+    paper_default = ativos[0] if ativos else "PETR4"
+    p1, p2, p3, p4 = st.columns(4)
+    with p1:
+        paper_ativo = st.selectbox("Ativo", ativos if ativos else [paper_default], key="paper_ativo_v42")
+    preco_paper = float(realtime_prices.get(paper_ativo, 0.0) or 0.0)
+    if preco_paper <= 0 and not tabela.empty:
+        _pp = tabela.loc[tabela["Ativo"] == paper_ativo, "Preço"]
+        if not _pp.empty and pd.notna(_pp.iloc[0]):
+            preco_paper = float(_pp.iloc[0])
+    with p2:
+        paper_lado = st.radio("Operação", ["🟢 Comprar", "🔴 Vender"], horizontal=True, key="paper_lado_v42")
+    with p3:
+        paper_qtd = st.number_input("Quantidade", min_value=1, value=10, step=1, key="paper_qtd_v42")
+    with p4:
+        paper_preco = st.number_input("Preço da simulação (R$)", min_value=0.01, value=max(round(preco_paper,2),0.01), step=0.01, key="paper_preco_v42")
+
+    custo_paper = float(paper_qtd) * float(paper_preco)
+    st.info(f"📋 Ordem simulada: **{paper_lado} {int(paper_qtd)} {paper_ativo}** a R$ {paper_preco:,.2f} · Total: **R$ {custo_paper:,.2f}**")
+    if paper_lado.startswith("🟢"):
+        pode = custo_paper <= float(st.session_state.paper_cash)
+        if st.button("🟢 Executar compra SIMULADA", use_container_width=True, key="paper_buy_v42", disabled=not pode):
+            pos = st.session_state.paper_positions.get(paper_ativo, {"quantidade":0,"custo_total":0.0})
+            pos["quantidade"] += int(paper_qtd)
+            pos["custo_total"] += custo_paper
+            st.session_state.paper_positions[paper_ativo] = pos
+            st.session_state.paper_cash -= custo_paper
+            st.session_state.paper_orders.append({"hora": pd.Timestamp.now(tz="America/Sao_Paulo"), "tipo":"COMPRA", "ativo":paper_ativo, "qtd":int(paper_qtd), "preco":float(paper_preco), "total":custo_paper})
+            st.success(f"Compra simulada executada: {int(paper_qtd)} {paper_ativo}.")
+            st.rerun()
+        if not pode:
+            st.warning("Caixa simulado insuficiente para essa ordem.")
+    else:
+        held = int(st.session_state.paper_positions.get(paper_ativo, {}).get("quantidade", 0))
+        pode = int(paper_qtd) <= held
+        if st.button("🔴 Executar venda SIMULADA", use_container_width=True, key="paper_sell_v42", disabled=not pode):
+            pos = st.session_state.paper_positions[paper_ativo]
+            avg = float(pos["custo_total"]) / max(int(pos["quantidade"]),1)
+            pos["quantidade"] -= int(paper_qtd)
+            pos["custo_total"] -= avg * int(paper_qtd)
+            if pos["quantidade"] <= 0:
+                st.session_state.paper_positions.pop(paper_ativo, None)
+            else:
+                st.session_state.paper_positions[paper_ativo] = pos
+            st.session_state.paper_cash += custo_paper
+            st.session_state.paper_orders.append({"hora": pd.Timestamp.now(tz="America/Sao_Paulo"), "tipo":"VENDA", "ativo":paper_ativo, "qtd":int(paper_qtd), "preco":float(paper_preco), "total":custo_paper})
+            st.success(f"Venda simulada executada: {int(paper_qtd)} {paper_ativo}.")
+            st.rerun()
+        if not pode:
+            st.warning(f"Você possui apenas {held} unidade(s) de {paper_ativo} na carteira simulada.")
+
+    # Resumo marcado a mercado com o preço mais recente disponível.
+    paper_rows=[]
+    paper_equity=float(st.session_state.paper_cash)
+    for ticker,pos in st.session_state.paper_positions.items():
+        qtd=int(pos["quantidade"]); custo=float(pos["custo_total"])
+        atual=float(realtime_prices.get(ticker, 0.0) or 0.0)
+        if atual <= 0 and not tabela.empty:
+            _x=tabela.loc[tabela["Ativo"]==ticker,"Preço"]
+            if not _x.empty and pd.notna(_x.iloc[0]): atual=float(_x.iloc[0])
+        valor=qtd*atual; pl=valor-custo
+        pm=custo/qtd if qtd else 0
+        paper_equity += valor
+        paper_rows.append({"Ativo":ticker,"Qtd":qtd,"Preço médio":pm,"Preço atual":atual,"Valor":valor,"P/L":pl,"P/L %":(pl/custo*100 if custo else 0)})
+    kpt1,kpt2,kpt3=st.columns(3)
+    kpt1.metric("💵 Caixa simulado", f"R$ {st.session_state.paper_cash:,.2f}".replace(",","X").replace(".",",").replace("X","."))
+    kpt2.metric("📦 Patrimônio simulado", f"R$ {paper_equity:,.2f}".replace(",","X").replace(".",",").replace("X","."))
+    kpt3.metric("📑 Ordens", str(len(st.session_state.paper_orders)))
+    if paper_rows:
+        st.dataframe(pd.DataFrame(paper_rows), use_container_width=True, hide_index=True,
+                     column_config={"Preço médio":st.column_config.NumberColumn(format="R$ %.2f"),"Preço atual":st.column_config.NumberColumn(format="R$ %.2f"),"Valor":st.column_config.NumberColumn(format="R$ %.2f"),"P/L":st.column_config.NumberColumn(format="R$ %.2f"),"P/L %":st.column_config.NumberColumn(format="%.2f%%")})
+    if st.session_state.paper_orders:
+        with st.expander("📜 Histórico de ordens simuladas", expanded=False):
+            _ord=pd.DataFrame(st.session_state.paper_orders).sort_values("hora",ascending=False).copy()
+            _ord["hora"]=_ord["hora"].dt.strftime("%d/%m/%Y %H:%M:%S")
+            st.dataframe(_ord, use_container_width=True, hide_index=True,
+                         column_config={"preco":st.column_config.NumberColumn("Preço",format="R$ %.2f"),"total":st.column_config.NumberColumn("Total",format="R$ %.2f")})
+    if st.button("♻️ Reiniciar Paper Trading (R$ 100.000)", key="reset_paper_v42"):
+        st.session_state.paper_cash=100000.0; st.session_state.paper_positions={}; st.session_state.paper_orders=[]; st.rerun()
 
     # V10: carteira virtual, sem envio de ordens e sem conexão com corretora.
     st.markdown('<div class="section">💼 Carteira simulada</div>', unsafe_allow_html=True)

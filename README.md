@@ -40,3 +40,10 @@ Para usar o feed BTG, configure `BTG_API_KEY` nos Secrets do Streamlit Cloud. Se
 - Filtros por categoria mantidos junto aos setores.
 - Análise e cotação seguem a arquitetura existente; BTG permanece voltado às ações B3 quando configurado.
 - Interface preparada para evolução das categorias sem perder a navegação da V37/V38.
+
+
+## V42 — Paper Trading
+- Ambiente de compra e venda **simulada** com R$ 100.000 de caixa inicial.
+- Posições, preço médio, patrimônio, P/L e histórico de ordens.
+- Nenhuma ordem é enviada a corretoras e nenhum dinheiro real é movimentado.
+- Mantém o motor Real-Time local da V41 e o universo de ações, FIIs, ETFs e BDRs.
