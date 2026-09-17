@@ -81,14 +81,26 @@ def cotacoes_btg(tickers,secrets=None):
 
 
 def cotacoes_yahoo_realtime(tickers):
-    """Obtém o último preço disponível no Yahoo Finance.
-    Observação: a disponibilidade/latência depende da fonte; não é garantido como tick-by-tick.
+    """Obtém o preço mais recente que o Yahoo disponibiliza.
+
+    Preferimos o último candle de 1 minuto em vez de ``fast_info.last_price``.
+    Isso evita um problema comum do app: ``fast_info`` pode ficar preso no
+    fechamento anterior enquanto a série intradiária já possui um valor mais novo.
+    Importante: Yahoo não é uma fonte tick-by-tick garantida; o app deve exibir
+    a origem/idade do dado e nunca chamar esse fallback de tempo real absoluto.
     """
     out = {}
     for ticker in tickers:
         simbolo = ATIVOS_B3.get(ticker, ticker if ticker.endswith(".SA") else f"{ticker}.SA")
         try:
             t = yf.Ticker(simbolo)
+            hist = t.history(period="1d", interval="1m", auto_adjust=False, prepost=False)
+            if hist is not None and not hist.empty:
+                close = pd.to_numeric(hist["Close"], errors="coerce").dropna()
+                if not close.empty:
+                    out[ticker] = float(close.iloc[-1])
+                    continue
+            # Fallback apenas quando o candle de 1 minuto não estiver disponível.
             info = t.fast_info
             price = info.get("last_price") if hasattr(info, "get") else None
             if price is not None and pd.notna(price):

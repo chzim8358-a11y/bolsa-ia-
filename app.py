@@ -14,7 +14,7 @@ from dividendos import obter_dividendos_yahoo
 from realtime_engine import RealtimeEngine
 
 st.set_page_config(
-    page_title="BolsaIA V43 | Inteligência de Mercado",
+    page_title="BolsaIA V44 | Inteligência de Mercado",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -451,7 +451,7 @@ def painel():
             yp = cotacoes_yahoo_realtime(yahoo_sel)
             realtime_prices.update(yp)
             for t in yp:
-                realtime_source[t] = "Yahoo · último preço disponível"
+                realtime_source[t] = "Yahoo · candle 1m (fonte pode ter atraso)"
         except Exception:
             pass
 
@@ -507,14 +507,14 @@ def painel():
 
     tabela = pd.DataFrame(resultados)
 
-    # V43: Central de Alertas + Watchlist — grande mudança da versão.
+    # V43: Central de Alertas + Watchlist (mantida na V44) — grande mudança da versão.
     # Alertas são locais à sessão e servem para monitoramento educacional; não enviam ordens.
-    if "watchlist_v43" not in st.session_state:
-        st.session_state.watchlist_v43 = []
-    if "alertas_v43" not in st.session_state:
-        st.session_state.alertas_v43 = []
-    if "alertas_disparados_v43" not in st.session_state:
-        st.session_state.alertas_disparados_v43 = []
+    if "watchlist_v44" not in st.session_state:
+        st.session_state.watchlist_v44 = []
+    if "alertas_v44" not in st.session_state:
+        st.session_state.alertas_v44 = []
+    if "alertas_disparados_v44" not in st.session_state:
+        st.session_state.alertas_disparados_v44 = []
 
     # V31: ranking inteligente + semáforo + explicação simples do score.
     def _semaforo_score(score):
@@ -738,24 +738,24 @@ def painel():
                 alerta_valor = st.number_input("Valor do gatilho", min_value=0.01, value=float(valor_padrao), step=0.01, key="alerta_valor_v43")
             if st.button("➕ Criar alerta", use_container_width=True, key="criar_alerta_v43"):
                 novo={"ativo":alerta_ativo,"tipo":alerta_tipo,"valor":float(alerta_valor),"criado":pd.Timestamp.now(tz="America/Sao_Paulo")}
-                st.session_state.alertas_v43.append(novo)
-                if alerta_ativo not in st.session_state.watchlist_v43:
-                    st.session_state.watchlist_v43.append(alerta_ativo)
+                st.session_state.alertas_v44.append(novo)
+                if alerta_ativo not in st.session_state.watchlist_v44:
+                    st.session_state.watchlist_v44.append(alerta_ativo)
                 st.success(f"🔔 Alerta criado para {alerta_ativo}.")
                 st.rerun()
 
         # Watchlist rápida.
         st.markdown("### ⭐ Minha Watchlist")
-        watch_opts=[a for a in ativos if a not in st.session_state.watchlist_v43]
+        watch_opts=[a for a in ativos if a not in st.session_state.watchlist_v44]
         if watch_opts:
             wsel=st.multiselect("Adicionar ativos à watchlist", watch_opts, key="watch_add_v43")
             if st.button("⭐ Salvar watchlist", key="watch_save_v43"):
-                st.session_state.watchlist_v43=list(dict.fromkeys(st.session_state.watchlist_v43+wsel))
+                st.session_state.watchlist_v44=list(dict.fromkeys(st.session_state.watchlist_v44+wsel))
                 st.success("Watchlist atualizada.")
                 st.rerun()
-        if st.session_state.watchlist_v43:
+        if st.session_state.watchlist_v44:
             rows=[]
-            for t in st.session_state.watchlist_v43:
+            for t in st.session_state.watchlist_v44:
                 linha=tabela[tabela["Ativo"]==t] if not tabela.empty else pd.DataFrame()
                 preco=float(realtime_prices.get(t,0.0) or 0.0)
                 score=None
@@ -766,12 +766,12 @@ def painel():
             st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True,
                          column_config={"Preço":st.column_config.NumberColumn(format="R$ %.2f"),"Score":st.column_config.NumberColumn(format="%.0f")})
             if st.button("🗑️ Limpar watchlist", key="watch_clear_v43"):
-                st.session_state.watchlist_v43=[]
+                st.session_state.watchlist_v44=[]
                 st.rerun()
 
         # Avaliação dos gatilhos a cada ciclo.
         disparados=[]
-        for al in st.session_state.alertas_v43:
+        for al in st.session_state.alertas_v44:
             linha=tabela[tabela["Ativo"]==al["ativo"]] if not tabela.empty else pd.DataFrame()
             preco=float(realtime_prices.get(al["ativo"],0.0) or 0.0)
             score=None
@@ -782,22 +782,22 @@ def painel():
             if atual is None or atual<=0: continue
             hit=(al["tipo"]=="Preço acima de" and atual>=al["valor"]) or (al["tipo"]=="Preço abaixo de" and atual<=al["valor"]) or (al["tipo"]=="Score acima de" and atual>=al["valor"]) or (al["tipo"]=="Score abaixo de" and atual<=al["valor"])
             if hit: disparados.append({**al,"atual":atual})
-        st.session_state.alertas_disparados_v43=disparados
+        st.session_state.alertas_disparados_v44=disparados
         if disparados:
             st.markdown("### 🚨 Alertas disparados")
             for d in disparados:
                 unidade="R$ " if d["tipo"].startswith("Preço") else ""
                 st.warning(f"🔔 **{d['ativo']}** · {d['tipo']} {unidade}{d['valor']:,.2f} · atual: {unidade}{d['atual']:,.2f}")
-        elif st.session_state.alertas_v43:
+        elif st.session_state.alertas_v44:
             st.success("🟢 Nenhum gatilho foi atingido neste ciclo.")
         with st.expander("📋 Meus alertas", expanded=False):
-            if st.session_state.alertas_v43:
-                adf=pd.DataFrame(st.session_state.alertas_v43)
+            if st.session_state.alertas_v44:
+                adf=pd.DataFrame(st.session_state.alertas_v44)
                 adf["criado"]=pd.to_datetime(adf["criado"]).dt.strftime("%d/%m/%Y %H:%M:%S")
                 st.dataframe(adf, use_container_width=True, hide_index=True)
                 if st.button("🧹 Limpar todos os alertas", key="alert_clear_v43"):
-                    st.session_state.alertas_v43=[]
-                    st.session_state.alertas_disparados_v43=[]
+                    st.session_state.alertas_v44=[]
+                    st.session_state.alertas_disparados_v44=[]
                     st.rerun()
             else:
                 st.caption("Nenhum alerta criado ainda.")
@@ -1297,6 +1297,70 @@ def painel():
             st.success(f"💡 Para buscar **R$ {objetivo_lucro:,.2f}** de lucro, nesse cenário seriam necessárias aproximadamente **{qtd_objetivo:,} unidades**, compradas a R$ {float(preco):,.2f}, com lucro bruto simulado de **R$ {lucro_simulado:,.2f}** se o preço chegasse a R$ {float(preco_alvo_sim):,.2f}.".replace(",", "X").replace(".", ",").replace("X", "."))
             if qtd_objetivo > unidades_orcamento and unidades_orcamento > 0:
                 st.info(f"📌 Com o capital de R$ {capital_risco:,.2f}, caberiam aproximadamente {unidades_orcamento:,} unidades nesse preço. Isso é apenas uma comparação de orçamento, não uma sugestão de investimento.".replace(",", "X").replace(".", ",").replace("X", "."))
+
+
+        # V44 — Painel de decisão da operação (simulação educacional).
+        # Centraliza preço, alvo, stop, risco/retorno e orçamento em uma única visão.
+        st.markdown("### 🧭 Painel da operação — simulação")
+        st.caption(
+            "Use este painel para testar cenários. Os valores são calculados a partir dos dados "
+            "observados e do plano técnico do modelo; não constituem recomendação nem executam ordens reais."
+        )
+
+        ganho_alvo_unit = max(float(plano["alvo"]) - float(preco), 0.0) if preco else 0.0
+        perda_stop_unit = max(float(preco) - float(plano["stop"]), 0.0) if preco else 0.0
+        potencial_alvo_pct = (ganho_alvo_unit / float(preco) * 100) if preco else None
+        risco_stop_pct = (perda_stop_unit / float(preco) * 100) if preco else None
+
+        # Quantidade livremente escolhida pelo usuário para testar uma operação.
+        qtd_sim = st.number_input(
+            "📦 Quantidade para simular",
+            min_value=1,
+            value=10,
+            step=1,
+            key=f"qtd_operacao_v44_{ativo}",
+        )
+        capital_sim = float(qtd_sim) * float(preco)
+        lucro_alvo_sim = float(qtd_sim) * ganho_alvo_unit
+        perda_stop_sim = float(qtd_sim) * perda_stop_unit
+
+        op1, op2, op3, op4 = st.columns(4)
+        op1.metric("💵 Capital da operação", f"R$ {capital_sim:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+        op2.metric("🎯 Potencial até alvo", f"R$ {lucro_alvo_sim:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+        op3.metric("🛑 Risco até stop", f"R$ {perda_stop_sim:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+        op4.metric("📐 Potencial / risco", f"{(ganho_alvo_unit / perda_stop_unit):.2f}x" if perda_stop_unit > 0 else "N/D")
+
+        op5, op6, op7, op8 = st.columns(4)
+        op5.metric("Preço observado", f"R$ {float(preco):.2f}")
+        op6.metric("Alvo técnico", f"R$ {float(plano['alvo']):.2f}", delta=f"{potencial_alvo_pct:.2f}%" if potencial_alvo_pct is not None else None)
+        op7.metric("Stop técnico", f"R$ {float(plano['stop']):.2f}", delta=f"-{risco_stop_pct:.2f}%" if risco_stop_pct is not None else None)
+        op8.metric("Score técnico", f"{pontos}/100")
+
+        if ganho_alvo_unit > 0:
+            st.success(
+                f"🎯 Neste cenário, {qtd_sim:,} unidades custariam aproximadamente "
+                f"R$ {capital_sim:,.2f} e, se o preço chegasse ao alvo simulado, "
+                f"o ganho bruto seria cerca de R$ {lucro_alvo_sim:,.2f}."
+                .replace(",", "X").replace(".", ",").replace("X", ".")
+            )
+        else:
+            st.warning("⚠️ O alvo técnico está igual ou abaixo do preço observado; o cenário não mostra ganho positivo até o alvo.")
+
+        st.markdown("#### 🧪 Cenários rápidos")
+        cen1, cen2, cen3 = st.columns(3)
+        for col, pct, label in [
+            (cen1, 0.01, "+1%"),
+            (cen2, 0.03, "+3%"),
+            (cen3, 0.05, "+5%"),
+        ]:
+            preco_cenario = float(preco) * (1 + pct)
+            lucro_cenario = float(qtd_sim) * (preco_cenario - float(preco))
+            col.metric(label, f"R$ {lucro_cenario:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+
+        st.caption(
+            "Os cenários rápidos são apenas matemática de sensibilidade sobre o preço observado. "
+            "Não representam previsão de preço."
+        )
 
         # V34: meta de renda por dividendos, usando somente o histórico efetivamente registrado.
         div_obj = div.get("dividendos_12m")
