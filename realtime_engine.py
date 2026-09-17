@@ -1,6 +1,7 @@
-"""BolsaIA V41 - motor local de atualização de cotações.
-Mantém um cache em memória, registra timestamps e permite atualização sem
-recarregar toda a aplicação. A fonte continua sendo um provedor de mercado.
+"""BolsaIA V44 - Realtime Hub local.
+Mantém cache, timestamps, idade do dado e uma interface de ingestão para uma
+futura conexão tick-by-tick/WebSocket. O hub não fabrica preços: ele distribui
+com baixa latência os dados recebidos de um feed de mercado configurado.
 """
 from __future__ import annotations
 import time
@@ -56,7 +57,24 @@ class RealtimeEngine:
         with self._lock:
             self._quotes.clear()
 
+    def ingest(self, ticker: str, price: float, source: str = "feed", updated_at: float | None = None):
+        """Ingere uma cotação individual do feed upstream.
+
+        Este é o ponto de entrada para um futuro WebSocket/tick feed próprio.
+        """
+        ts = time.time() if updated_at is None else float(updated_at)
+        with self._lock:
+            self._quotes[ticker] = Quote(ticker, float(price), source, ts)
+        return self.snapshot([ticker]).get(ticker)
+
     def health(self) -> dict:
         snap = self.snapshot()
         fresh = sum(q.status == "fresh" for q in snap.values())
-        return {"cached": len(snap), "fresh": fresh, "stale": len(snap) - fresh, "ttl_seconds": self.ttl_seconds}
+        ages = [q.age_seconds for q in snap.values()]
+        return {
+            "cached": len(snap),
+            "fresh": fresh,
+            "stale": len(snap) - fresh,
+            "ttl_seconds": self.ttl_seconds,
+            "max_age_seconds": round(max(ages), 2) if ages else None,
+        }

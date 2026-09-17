@@ -132,7 +132,7 @@ div[data-testid="stMetric"] { background:rgba(13,24,42,.82); border:1px solid rg
   <div class="brand-row">
     <img class="brand-logo" src="data:image/png;base64,LOGO_B64" />
     <div>
-      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V43</span></h1>
+      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V44</span></h1>
       <div class="tagline">Inteligência de mercado para análise técnica, radar e gestão de risco.</div>
       <div class="mini"><span class="chip">⚡ Scanner inteligente</span><span class="chip">📊 Análise técnica</span><span class="chip green">🛡️ Carteira simulada</span></div>
     </div>
@@ -195,10 +195,10 @@ if st.session_state.pagina == "👤 Login":
 
 if st.session_state.pagina == "⚙️ Config":
     st.markdown("<div class='section'>⚙️ Configurações rápidas</div>", unsafe_allow_html=True)
-    st.write("**Feed principal:**", "BTG realtime" if btg_disponivel(st.secrets if hasattr(st, "secrets") else None) else "Yahoo Finance fallback")
+    st.write("**Arquitetura:**", "BolsaIA Realtime Hub · ingestão local + feed upstream")
     st.write("**Ciclo do scanner:** 5 segundos")
     st.write("**Universo:** ações B3 + FIIs + ETFs + BDRs")
-    st.info("💡 Para cotações de ações B3 mais próximas do tempo real, configure BTG_API_KEY nos Secrets do Streamlit Cloud. O Yahoo Finance permanece como fallback e pode ter atraso.")
+    st.info("💡 O Hub local não inventa cotações. Para dados realmente tick-by-tick, conecte um feed licenciado/WebSocket; Google pode ser usado apenas como referência de validação, não como fonte de ingestão.")
     st.stop()
 
 st.markdown("""
@@ -210,7 +210,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 st.caption("Ferramenta educacional. Indicadores, scores e cenários são hipotéticos e não constituem recomendação de investimento.")
-st.caption("🧭 V43 · Motor Real-Time + Paper Trading + Central de Alertas · Nenhuma ordem real é enviada")
+st.caption("🧭 V44 · Realtime Hub + Painel da Operação + Paper Trading + Central de Alertas · Nenhuma ordem real é enviada")
 
 # V41: painel do motor real-time local.
 try:
@@ -272,14 +272,13 @@ usar_btg = btg_disponivel(secrets)
 if usar_btg:
     st.success("🟢 Feed BTG configurado: cotações/candles B3 em modo realtime.")
 else:
-    st.warning("🟡 Feed realtime ainda não configurado. O app está usando Yahoo Finance como fallback.")
-    st.info("Para ativar o realtime, configure BTG_API_KEY em Manage app → Settings → Secrets no Streamlit Cloud.")
+    st.info("ℹ️ O BolsaIA Realtime Hub está ativo. Sem um feed tick-by-tick configurado, o upstream continua sendo usado apenas como fonte de dados de mercado.")
 
 # V39: Central de confiança dos dados. A interface deixa explícito o que é
 # realtime, o que é fallback e quando o ciclo do painel foi executado.
 now_brasilia = pd.Timestamp.now(tz="America/Sao_Paulo")
-feed_nome = "BTG · realtime" if usar_btg else "Yahoo Finance · fallback"
-feed_nivel = "🟢 profissional/realtime configurado" if usar_btg else "🟡 fallback · pode ter atraso"
+feed_nome = "BTG · upstream realtime" if usar_btg else "Upstream de mercado · fallback"
+feed_nivel = "🟢 Hub local recebendo feed realtime" if usar_btg else "🟡 Hub local · upstream pode ter atraso"
 st.markdown(f"""
 <div class='client-strip'>
   <span><strong>📡 Central de dados V39</strong> · {feed_nome}</span>
@@ -451,7 +450,7 @@ def painel():
             yp = cotacoes_yahoo_realtime(yahoo_sel)
             realtime_prices.update(yp)
             for t in yp:
-                realtime_source[t] = "Yahoo · candle 1m (fonte pode ter atraso)"
+                realtime_source[t] = "BolsaIA Hub ← Yahoo 1m (pode ter atraso)"
         except Exception:
             pass
 
@@ -1434,12 +1433,12 @@ def painel():
         st.caption(f"Último candle recebido: {df.index[-1]}")
 
     if usar_btg:
-        st.caption("Fonte principal: BTG Solutions Data Services / Market Data B3 em modo realtime. O acesso depende do plano/licença da sua chave.")
+        st.caption("Upstream: BTG Solutions Data Services / Market Data B3. O BolsaIA Realtime Hub mantém a distribuição local; a latência final depende do feed contratado.")
     else:
-        st.caption("Fallback: Yahoo Finance. Ele não deve ser tratado como feed profissional em tempo real.")
+        st.caption("Upstream alternativo: Yahoo Finance. O Hub local não transforma um feed atrasado em tick-by-tick.")
 
 
-st.markdown("<div class='footer'>BolsaIA V39 · Inteligência de Mercado · Demonstração educacional · Dados dependem da fonte configurada</div>", unsafe_allow_html=True)
+st.markdown("<div class='footer'>BolsaIA V44 · Inteligência de Mercado · Demonstração educacional · Hub local + Painel da Operação + feed configurado</div>", unsafe_allow_html=True)
 
 if hasattr(st, "fragment"):
     @st.fragment(run_every="5s")
