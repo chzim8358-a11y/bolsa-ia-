@@ -142,6 +142,11 @@ div[data-testid="stMetric"] { background:rgba(13,24,42,.82); border:1px solid rg
 _hero_html = _hero_html.replace("LOGO_B64", _logo_b64)
 st.markdown(_hero_html, unsafe_allow_html=True)
 
+# V45.1: universo base definido antes da navegação/telas secundárias.
+# O Backtest é renderizado antes do scanner, então ele não pode depender de uma
+# variável `ativos` criada mais abaixo no fluxo do app.
+ativos = list(dict.fromkeys(ATIVOS_B3.keys()))
+
 # V39: navegação interna corrigida. Todos os atalhos trocam de tela dentro do app,
 # sem depender de âncoras HTML e sem obrigar o usuário a sair/recarregar a página.
 if "pagina" not in st.session_state:
@@ -177,7 +182,13 @@ if st.session_state.pagina == "🧪 Backtest":
 
     b1, b2, b3 = st.columns(3)
     with b1:
-        bt_ativo = st.selectbox("Ativo", ativos, index=ativos.index("PETR4") if "PETR4" in ativos else 0, key="backtest_ativo_v45")
+        # V45.1: Backtest nunca quebra por lista vazia ou por PETR4 ausente.
+        ativos_backtest = list(dict.fromkeys(ativos))
+        if not ativos_backtest:
+            st.warning("Nenhum ativo disponível para o Backtest. Verifique os ativos monitorados.")
+            st.stop()
+        bt_index = ativos_backtest.index("PETR4") if "PETR4" in ativos_backtest else 0
+        bt_ativo = st.selectbox("Ativo", ativos_backtest, index=bt_index, key="backtest_ativo_v45")
     with b2:
         bt_periodo = st.selectbox("Período histórico", ["1y", "2y", "5y"], index=0, key="backtest_periodo_v45")
     with b3:
