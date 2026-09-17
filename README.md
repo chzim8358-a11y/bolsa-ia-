@@ -42,8 +42,14 @@ Para usar o feed BTG, configure `BTG_API_KEY` nos Secrets do Streamlit Cloud. Se
 - Interface preparada para evolução das categorias sem perder a navegação da V37/V38.
 
 
-## V42 — Paper Trading
+## V43 — Paper Trading
 - Ambiente de compra e venda **simulada** com R$ 100.000 de caixa inicial.
 - Posições, preço médio, patrimônio, P/L e histórico de ordens.
 - Nenhuma ordem é enviada a corretoras e nenhum dinheiro real é movimentado.
 - Mantém o motor Real-Time local da V41 e o universo de ações, FIIs, ETFs e BDRs.
+
+
+## V43 — Central de Alertas
+- Grande mudança: Watchlist e alertas locais por preço ou Score.
+- Alertas são educacionais, locais à sessão e não enviam ordens reais.
+- Mantém Paper Trading V42 e Motor Real-Time V41.

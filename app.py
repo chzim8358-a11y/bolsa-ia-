@@ -14,7 +14,7 @@ from dividendos import obter_dividendos_yahoo
 from realtime_engine import RealtimeEngine
 
 st.set_page_config(
-    page_title="BolsaIA V41 | Inteligência de Mercado",
+    page_title="BolsaIA V43 | Inteligência de Mercado",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -150,13 +150,14 @@ if "logado" not in st.session_state:
     st.session_state.logado = False
 
 st.markdown("<div class='section'>🚀 Atalhos</div>", unsafe_allow_html=True)
-nav_cols = st.columns(5)
+nav_cols = st.columns(6)
 for col, label, value in [
     (nav_cols[0], "🏠 Início", "🏠 Início"),
     (nav_cols[1], "⚡ Scanner", "⚡ Scanner"),
     (nav_cols[2], "📊 Análise", "📊 Análise"),
     (nav_cols[3], "⚙️ Config", "⚙️ Config"),
-    (nav_cols[4], "👤 Login", "👤 Login"),
+    (nav_cols[4], "🔔 Alertas", "🔔 Alertas"),
+    (nav_cols[5], "👤 Login", "👤 Login"),
 ]:
     with col:
         if st.button(label, use_container_width=True, key=f"nav_{value}"):
@@ -209,7 +210,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 st.caption("Ferramenta educacional. Indicadores, scores e cenários são hipotéticos e não constituem recomendação de investimento.")
-st.caption("🧭 V42 · Motor Real-Time local + BolsaIA Paper Trading · Nenhuma ordem real é enviada")
+st.caption("🧭 V43 · Motor Real-Time + Paper Trading + Central de Alertas · Nenhuma ordem real é enviada")
 
 # V41: painel do motor real-time local.
 try:
@@ -506,6 +507,15 @@ def painel():
 
     tabela = pd.DataFrame(resultados)
 
+    # V43: Central de Alertas + Watchlist — grande mudança da versão.
+    # Alertas são locais à sessão e servem para monitoramento educacional; não enviam ordens.
+    if "watchlist_v43" not in st.session_state:
+        st.session_state.watchlist_v43 = []
+    if "alertas_v43" not in st.session_state:
+        st.session_state.alertas_v43 = []
+    if "alertas_disparados_v43" not in st.session_state:
+        st.session_state.alertas_disparados_v43 = []
+
     # V31: ranking inteligente + semáforo + explicação simples do score.
     def _semaforo_score(score):
         if pd.isna(score): return ("⚪", "Sem dados")
@@ -706,6 +716,92 @@ def painel():
             st.caption("A BolsaIA usa indicadores técnicos para fins educacionais. Nenhum desses números representa probabilidade garantida de retorno.")
     else:
         st.info("O dashboard aparecerá quando houver dados válidos de pelo menos um ativo.")
+
+    if st.session_state.pagina == "🔔 Alertas":
+        st.markdown('<div class="section">🔔 Central de Alertas V43</div>', unsafe_allow_html=True)
+        st.info("Crie uma watchlist e acompanhe gatilhos de preço ou Score. Os alertas são apenas de monitoramento nesta sessão; nenhuma ordem real é enviada.")
+        ativos_alerta = [a for a in ativos if a in set(tabela.get("Ativo", []))] if not tabela.empty else ativos
+        if not ativos_alerta:
+            st.warning("Nenhum ativo disponível para criar alertas agora.")
+        else:
+            a1,a2,a3 = st.columns(3)
+            with a1:
+                alerta_ativo = st.selectbox("Ativo", ativos_alerta, key="alerta_ativo_v43")
+            preco_alerta = float(realtime_prices.get(alerta_ativo, 0.0) or 0.0)
+            if preco_alerta <= 0 and not tabela.empty:
+                rr=tabela.loc[tabela["Ativo"]==alerta_ativo,"Preço"]
+                if not rr.empty and pd.notna(rr.iloc[0]): preco_alerta=float(rr.iloc[0])
+            with a2:
+                alerta_tipo = st.selectbox("Gatilho", ["Preço acima de", "Preço abaixo de", "Score acima de", "Score abaixo de"], key="alerta_tipo_v43")
+            with a3:
+                valor_padrao = round(preco_alerta,2) if alerta_tipo.startswith("Preço") and preco_alerta>0 else 75.0
+                alerta_valor = st.number_input("Valor do gatilho", min_value=0.01, value=float(valor_padrao), step=0.01, key="alerta_valor_v43")
+            if st.button("➕ Criar alerta", use_container_width=True, key="criar_alerta_v43"):
+                novo={"ativo":alerta_ativo,"tipo":alerta_tipo,"valor":float(alerta_valor),"criado":pd.Timestamp.now(tz="America/Sao_Paulo")}
+                st.session_state.alertas_v43.append(novo)
+                if alerta_ativo not in st.session_state.watchlist_v43:
+                    st.session_state.watchlist_v43.append(alerta_ativo)
+                st.success(f"🔔 Alerta criado para {alerta_ativo}.")
+                st.rerun()
+
+        # Watchlist rápida.
+        st.markdown("### ⭐ Minha Watchlist")
+        watch_opts=[a for a in ativos if a not in st.session_state.watchlist_v43]
+        if watch_opts:
+            wsel=st.multiselect("Adicionar ativos à watchlist", watch_opts, key="watch_add_v43")
+            if st.button("⭐ Salvar watchlist", key="watch_save_v43"):
+                st.session_state.watchlist_v43=list(dict.fromkeys(st.session_state.watchlist_v43+wsel))
+                st.success("Watchlist atualizada.")
+                st.rerun()
+        if st.session_state.watchlist_v43:
+            rows=[]
+            for t in st.session_state.watchlist_v43:
+                linha=tabela[tabela["Ativo"]==t] if not tabela.empty else pd.DataFrame()
+                preco=float(realtime_prices.get(t,0.0) or 0.0)
+                score=None
+                if not linha.empty:
+                    if preco<=0 and pd.notna(linha.iloc[0].get("Preço")): preco=float(linha.iloc[0]["Preço"])
+                    if pd.notna(linha.iloc[0].get("Score")): score=float(linha.iloc[0]["Score"])
+                rows.append({"Ativo":t,"Preço":preco,"Score":score})
+            st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True,
+                         column_config={"Preço":st.column_config.NumberColumn(format="R$ %.2f"),"Score":st.column_config.NumberColumn(format="%.0f")})
+            if st.button("🗑️ Limpar watchlist", key="watch_clear_v43"):
+                st.session_state.watchlist_v43=[]
+                st.rerun()
+
+        # Avaliação dos gatilhos a cada ciclo.
+        disparados=[]
+        for al in st.session_state.alertas_v43:
+            linha=tabela[tabela["Ativo"]==al["ativo"]] if not tabela.empty else pd.DataFrame()
+            preco=float(realtime_prices.get(al["ativo"],0.0) or 0.0)
+            score=None
+            if not linha.empty:
+                if preco<=0 and pd.notna(linha.iloc[0].get("Preço")): preco=float(linha.iloc[0]["Preço"])
+                if pd.notna(linha.iloc[0].get("Score")): score=float(linha.iloc[0]["Score"])
+            atual=preco if al["tipo"].startswith("Preço") else score
+            if atual is None or atual<=0: continue
+            hit=(al["tipo"]=="Preço acima de" and atual>=al["valor"]) or (al["tipo"]=="Preço abaixo de" and atual<=al["valor"]) or (al["tipo"]=="Score acima de" and atual>=al["valor"]) or (al["tipo"]=="Score abaixo de" and atual<=al["valor"])
+            if hit: disparados.append({**al,"atual":atual})
+        st.session_state.alertas_disparados_v43=disparados
+        if disparados:
+            st.markdown("### 🚨 Alertas disparados")
+            for d in disparados:
+                unidade="R$ " if d["tipo"].startswith("Preço") else ""
+                st.warning(f"🔔 **{d['ativo']}** · {d['tipo']} {unidade}{d['valor']:,.2f} · atual: {unidade}{d['atual']:,.2f}")
+        elif st.session_state.alertas_v43:
+            st.success("🟢 Nenhum gatilho foi atingido neste ciclo.")
+        with st.expander("📋 Meus alertas", expanded=False):
+            if st.session_state.alertas_v43:
+                adf=pd.DataFrame(st.session_state.alertas_v43)
+                adf["criado"]=pd.to_datetime(adf["criado"]).dt.strftime("%d/%m/%Y %H:%M:%S")
+                st.dataframe(adf, use_container_width=True, hide_index=True)
+                if st.button("🧹 Limpar todos os alertas", key="alert_clear_v43"):
+                    st.session_state.alertas_v43=[]
+                    st.session_state.alertas_disparados_v43=[]
+                    st.rerun()
+            else:
+                st.caption("Nenhum alerta criado ainda.")
+        st.caption("💡 V43: alertas e watchlist são armazenados apenas na sessão atual e dependem do preço/Score disponível no momento.")
 
     st.markdown('<div id="scanner-section"></div><div class="section">🔎 Scanner de oportunidades</div>', unsafe_allow_html=True)
     stamp = st.session_state.get("ultima_atualizacao_painel")
