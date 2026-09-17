@@ -1,20 +1,20 @@
-# BolsaIA V44
+# BolsaIA V46
 
-## V44 — Realtime Hub + Painel da Operação
+## V46 — Dashboard Profissional
 
-Esta versão reúne as duas frentes planejadas para a V44:
+A V46 evolui a base V45 corrigida com uma nova Home em formato de dashboard profissional.
 
-- Motor Realtime Hub local com cache, timestamps e controle de idade dos dados.
-- Integração com feed upstream configurado (BTG quando disponível; Yahoo como fallback).
-- Painel da operação: capital, alvo, stop, risco/retorno, quantidade e cenários.
-- Calculadora de objetivo de lucro e quantidade necessária.
-- Paper Trading educacional.
-- Central de Alertas e Watchlist.
-- Scanner, análise técnica, indicadores, dividendos e filtros de categorias.
+### Principais mudanças
+- Dashboard central com cards de ativos e estado do mercado.
+- Watchlist rápida na Home.
+- Ações rápidas para Scanner, Análise, Backtest e Alertas.
+- Realtime Hub destacado com transparência de fonte/idade dos dados.
+- Área de interface para Assistente IA.
+- Mantidos Backtest, Paper Trading, Alertas, Watchlist, Painel da Operação, calculadoras, indicadores e análise técnica da V45.
+- Navegação interna e telas secundárias preservadas.
 
-### Importante
-O Hub local não cria preços. Ele distribui os dados recebidos de uma fonte de mercado.
-Google pode ser usado como referência de conferência, mas não deve ser tratado como feed de ingestão.
-Para tick-by-tick real, conecte um feed licenciado/WebSocket.
+### Dados
+O Realtime Hub distribui localmente os dados recebidos; ele não fabrica cotações nem transforma uma fonte atrasada em tick-by-tick. Para produção, use um feed de mercado adequado/licenciado.
 
-Nenhuma ordem real é enviada.
+### Segurança
+Nenhuma ordem real é enviada. Os sinais e cenários são educacionais e não constituem recomendação de investimento.

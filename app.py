@@ -14,7 +14,7 @@ from dividendos import obter_dividendos_yahoo
 from realtime_engine import RealtimeEngine
 
 st.set_page_config(
-    page_title="BolsaIA V45 | Inteligência de Mercado",
+    page_title="BolsaIA V46 | Inteligência de Mercado",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -132,7 +132,7 @@ div[data-testid="stMetric"] { background:rgba(13,24,42,.82); border:1px solid rg
   <div class="brand-row">
     <img class="brand-logo" src="data:image/png;base64,LOGO_B64" />
     <div>
-      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V45</span></h1>
+      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V46</span></h1>
       <div class="tagline">Inteligência de mercado para análise técnica, radar e gestão de risco.</div>
       <div class="mini"><span class="chip">⚡ Scanner inteligente</span><span class="chip">📊 Análise técnica</span><span class="chip green">🛡️ Carteira simulada</span></div>
     </div>
@@ -142,17 +142,16 @@ div[data-testid="stMetric"] { background:rgba(13,24,42,.82); border:1px solid rg
 _hero_html = _hero_html.replace("LOGO_B64", _logo_b64)
 st.markdown(_hero_html, unsafe_allow_html=True)
 
-# V45.1: universo base definido antes da navegação/telas secundárias.
-# O Backtest é renderizado antes do scanner, então ele não pode depender de uma
-# variável `ativos` criada mais abaixo no fluxo do app.
-ativos = list(dict.fromkeys(ATIVOS_B3.keys()))
-
 # V39: navegação interna corrigida. Todos os atalhos trocam de tela dentro do app,
 # sem depender de âncoras HTML e sem obrigar o usuário a sair/recarregar a página.
 if "pagina" not in st.session_state:
     st.session_state.pagina = "🏠 Início"
 if "logado" not in st.session_state:
     st.session_state.logado = False
+
+# V45 fix: o Backtest é renderizado antes dos filtros do Scanner, então
+# o universo base precisa existir antes de qualquer selectbox que o use.
+ativos = list(ATIVOS_B3.keys())
 
 st.markdown("<div class='section'>🚀 Atalhos</div>", unsafe_allow_html=True)
 nav_cols = st.columns(7)
@@ -177,33 +176,27 @@ if st.session_state.pagina != "🏠 Início":
         st.rerun()
 
 if st.session_state.pagina == "🧪 Backtest":
-    st.markdown("<div class='section'>🧪 Laboratório de Backtest V45</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section'>🧪 Laboratório de Backtest V46</div>", unsafe_allow_html=True)
     st.caption("Teste uma regra simples sobre dados históricos. O resultado é uma simulação retrospectiva e não representa previsão nem recomendação de investimento.")
 
     b1, b2, b3 = st.columns(3)
     with b1:
-        # V45.1: Backtest nunca quebra por lista vazia ou por PETR4 ausente.
-        ativos_backtest = list(dict.fromkeys(ativos))
-        if not ativos_backtest:
-            st.warning("Nenhum ativo disponível para o Backtest. Verifique os ativos monitorados.")
-            st.stop()
-        bt_index = ativos_backtest.index("PETR4") if "PETR4" in ativos_backtest else 0
-        bt_ativo = st.selectbox("Ativo", ativos_backtest, index=bt_index, key="backtest_ativo_v45")
+        bt_ativo = st.selectbox("Ativo", ativos, index=ativos.index("PETR4") if "PETR4" in ativos else 0, key="backtest_ativo_v46")
     with b2:
-        bt_periodo = st.selectbox("Período histórico", ["1y", "2y", "5y"], index=0, key="backtest_periodo_v45")
+        bt_periodo = st.selectbox("Período histórico", ["1y", "2y", "5y"], index=0, key="backtest_periodo_v46")
     with b3:
-        bt_capital = st.number_input("Capital inicial (R$)", min_value=100.0, value=10000.0, step=500.0, key="backtest_capital_v45")
+        bt_capital = st.number_input("Capital inicial (R$)", min_value=100.0, value=10000.0, step=500.0, key="backtest_capital_v46")
 
     b4, b5 = st.columns(2)
     with b4:
-        bt_curta = st.slider("Média curta", 3, 50, 10, key="backtest_curta_v45")
+        bt_curta = st.slider("Média curta", 3, 50, 10, key="backtest_curta_v46")
     with b5:
-        bt_longa = st.slider("Média longa", 10, 200, 30, key="backtest_longa_v45")
+        bt_longa = st.slider("Média longa", 10, 200, 30, key="backtest_longa_v46")
 
     if bt_curta >= bt_longa:
         st.warning("A média curta precisa ser menor que a média longa.")
     else:
-        if st.button("▶️ Executar backtest", use_container_width=True, key="run_backtest_v45"):
+        if st.button("▶️ Executar backtest", use_container_width=True, key="run_backtest_v46"):
             try:
                 hist = dados_yahoo(bt_ativo, periodo=bt_periodo, intervalo="1d").copy()
                 hist["SMA_CURTA"] = hist["Close"].rolling(bt_curta).mean()
@@ -280,7 +273,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 st.caption("Ferramenta educacional. Indicadores, scores e cenários são hipotéticos e não constituem recomendação de investimento.")
-st.caption("🧭 V45 · Realtime Hub + Painel da Operação + Paper Trading + Central de Alertas + Backtest · Nenhuma ordem real é enviada")
+st.caption("🧭 V46 · Dashboard Profissional + Realtime Hub + Painel da Operação + Paper Trading + Central de Alertas + Backtest · Nenhuma ordem real é enviada")
 
 # V41: painel do motor real-time local.
 try:
@@ -310,20 +303,89 @@ def _texto_tendencia(media_score):
     return "🔴 Mercado mais defensivo", "Os sinais técnicos estão menos favoráveis; vale acompanhar o risco com atenção."
 
 if st.session_state.pagina == "🏠 Início":
-    st.markdown('<div class="section">🧠 Seu painel em linguagem simples</div>', unsafe_allow_html=True)
-    st.info("👋 **Bem-vindo à BolsaIA.** Você não precisa entender todos os indicadores para começar. O painel abaixo resume o que os dados técnicos estão mostrando e deixa os detalhes disponíveis quando você quiser aprofundar.")
-    h1, h2, h3 = st.columns(3)
-    with h1:
-        st.markdown('<div class="exec-card"><div class="exec-label">O que procurar</div><div class="exec-value">🏆 Score</div><div class="muted">Quanto maior, mais sinais técnicos favoráveis.</div></div>', unsafe_allow_html=True)
-    with h2:
-        st.markdown('<div class="exec-card"><div class="exec-label">Como entender</div><div class="exec-value">🟢🟡🔴</div><div class="muted">Verde = favorável · amarelo = atenção · vermelho = defensivo.</div></div>', unsafe_allow_html=True)
-    with h3:
-        st.markdown('<div class="exec-card"><div class="exec-label">Dados</div><div class="exec-value">📡 Atualizados</div><div class="muted">A fonte e a qualidade do preço aparecem no scanner.</div></div>', unsafe_allow_html=True)
-    st.markdown("### 🚦 Como usar a BolsaIA")
-    st.write("**1.** Abra o **Scanner** para encontrar ativos que merecem atenção.")
-    st.write("**2.** Escolha um ativo e abra a **Análise** para entender o motivo do sinal.")
-    st.write("**3.** Consulte **Risco** e o plano técnico antes de interpretar qualquer cenário.")
-    st.caption("💡 Os sinais são educacionais e baseados em indicadores técnicos. Eles não garantem retorno e não substituem análise profissional.")
+    st.markdown('<div class="section">🚀 Dashboard Profissional V46</div>', unsafe_allow_html=True)
+    st.info("👋 **Bem-vindo à BolsaIA.** A V46 transforma o Início em um painel central: mercado, ativos, alertas, dados e ferramentas ficam acessíveis em uma única visão.")
+
+    # V46: cards de mercado. Os valores são obtidos sob demanda para evitar travamentos
+    # e deixam claro que são dados observados, não previsões.
+    def _fmt_brl(v):
+        try:
+            return f"R$ {float(v):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        except Exception:
+            return "N/D"
+
+    def _obter_resumo(ticker):
+        try:
+            cached = st.session_state.rt_engine.get(ticker)
+            if cached and cached.get("price") is not None:
+                return float(cached["price"]), cached.get("source", "cache")
+        except Exception:
+            pass
+        try:
+            df0 = dados_yahoo(ticker, periodo="5d", intervalo="1d")
+            if df0 is not None and not df0.empty and "Close" in df0:
+                return float(df0["Close"].dropna().iloc[-1]), "Yahoo"
+        except Exception:
+            pass
+        return None, "indisponível"
+
+    resumo_ativos = ["PETR4", "VALE3", "ITUB4", "BBAS3"]
+    vals = {a: _obter_resumo(a) for a in resumo_ativos}
+    dash_cols = st.columns(4)
+    for col, ticker in zip(dash_cols, resumo_ativos):
+        preco, fonte = vals[ticker]
+        with col:
+            st.markdown(f'<div class="dash-card"><div class="dash-kicker">{ticker}</div><div class="dash-value">{_fmt_brl(preco)}</div><div class="dash-help">📡 Fonte: {fonte}<br>Valor observado; confira o horário no painel de dados.</div></div>', unsafe_allow_html=True)
+
+    st.markdown("### 📊 Visão rápida do mercado")
+    q1, q2, q3, q4 = st.columns(4)
+    q1.metric("Estado da B3", "ABERTO" if "aberto" in status_mercado.lower() else "FECHADO")
+    try:
+        health = st.session_state.rt_engine.health()
+        q2.metric("Realtime Hub", "Online", f"{health.get('cached', 0)} em cache")
+        q3.metric("Dados frescos", f"{health.get('fresh', 0)}", f"TTL {health.get('ttl_seconds', 15)}s")
+    except Exception:
+        q2.metric("Realtime Hub", "Ativo")
+        q3.metric("Dados frescos", "N/D")
+    q4.metric("Ativos monitorados", f"{len(ativos)}")
+
+    left, right = st.columns([1.5, 1])
+    with left:
+        st.markdown("### ⭐ Watchlist rápida")
+        watch = st.session_state.get("watchlist", ["PETR4", "VALE3", "ITUB4", "BBAS3"])
+        linhas = []
+        for ticker in watch[:8]:
+            preco, fonte = _obter_resumo(ticker)
+            linhas.append({"Ativo": ticker, "Preço": _fmt_brl(preco), "Fonte": fonte})
+        if linhas:
+            st.dataframe(pd.DataFrame(linhas), use_container_width=True, hide_index=True)
+        else:
+            st.caption("Sua watchlist está vazia.")
+    with right:
+        st.markdown("### ⚡ Ações rápidas")
+        for label, value in [("⚡ Abrir Scanner", "⚡ Scanner"), ("📊 Abrir Análise", "📊 Análise"), ("🧪 Abrir Backtest", "🧪 Backtest"), ("🔔 Ver Alertas", "🔔 Alertas")]:
+            if st.button(label, use_container_width=True, key=f"v46_home_{value}"):
+                st.session_state.pagina = value
+                st.rerun()
+
+    st.markdown("### 📡 Realtime Hub")
+    st.markdown('<div class="client-strip"><span><strong>Motor local de distribuição</strong> · mantém o último dado recebido e informa a idade/fonte.</span><span>⚠️ O Hub não cria cotações e não elimina atrasos da fonte upstream.</span></div>', unsafe_allow_html=True)
+
+    st.markdown("### 🤖 Assistente IA")
+    ai1, ai2 = st.columns(2)
+    with ai1:
+        st.write("Pergunte algo sobre os indicadores, o funcionamento do app ou um cenário de simulação.")
+        pergunta = st.text_input("Sua pergunta", placeholder="Ex.: O que significa RSI acima de 70?", key="v46_ai_question")
+        if pergunta:
+            st.info("🧠 Na V46, o painel de IA está preparado como interface. A geração de respostas financeiras em produção deve usar um modelo/serviço conectado e políticas de segurança próprias.")
+    with ai2:
+        st.markdown('<div class="exec-card"><div class="exec-label">Como interpretar</div><div class="exec-value">🟢🟡🔴</div><div class="muted">Os sinais técnicos são informativos e educacionais. Não constituem recomendação de investimento.</div></div>', unsafe_allow_html=True)
+
+    st.markdown("### 🧭 Como usar a BolsaIA")
+    st.write("**1.** Use o **Scanner** para filtrar ativos.")
+    st.write("**2.** Abra a **Análise** para estudar indicadores e histórico.")
+    st.write("**3.** Use **Backtest** e **Paper Trading** para testar cenários sem enviar ordens reais.")
+    st.caption("💡 Dados de mercado podem ter atraso conforme a fonte. Sempre confira fonte e horário antes de tomar qualquer decisão financeira.")
 
 
 if st.session_state.pagina == "⚡ Scanner":
@@ -1444,7 +1506,7 @@ def painel():
             dc3.metric("Capital ao preço observado", f"R$ {capital_div_meta:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
             st.caption("⚠️ Essa conta repete o valor histórico de dividendos dos últimos 12 meses apenas como simulação. Pagamentos futuros, valores e datas não são garantidos.")
 
-        st.markdown("### 📈 Gráfico profissional V39")
+        st.markdown("### 📈 Gráfico profissional V46")
         try:
             import plotly.graph_objects as go
             from plotly.subplots import make_subplots
@@ -1508,7 +1570,7 @@ def painel():
         st.caption("Upstream alternativo: Yahoo Finance. O Hub local não transforma um feed atrasado em tick-by-tick.")
 
 
-st.markdown("<div class='footer'>BolsaIA V45 · Inteligência de Mercado · Demonstração educacional · Hub local + Painel da Operação + Paper Trading + Alertas + Backtest</div>", unsafe_allow_html=True)
+st.markdown("<div class='footer'>BolsaIA V46 · Inteligência de Mercado · Demonstração educacional · Dashboard Profissional + Hub local + Painel da Operação + Paper Trading + Alertas + Backtest</div>", unsafe_allow_html=True)
 
 if hasattr(st, "fragment"):
     @st.fragment(run_every="5s")
