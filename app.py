@@ -14,7 +14,7 @@ from dividendos import obter_dividendos_yahoo
 from realtime_engine import RealtimeEngine
 
 st.set_page_config(
-    page_title="BolsaIA V46 | Inteligência de Mercado",
+    page_title="BolsaIA V46.1 | Inteligência de Mercado",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -132,7 +132,7 @@ div[data-testid="stMetric"] { background:rgba(13,24,42,.82); border:1px solid rg
   <div class="brand-row">
     <img class="brand-logo" src="data:image/png;base64,LOGO_B64" />
     <div>
-      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V46</span></h1>
+      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V46.1</span></h1>
       <div class="tagline">Inteligência de mercado para análise técnica, radar e gestão de risco.</div>
       <div class="mini"><span class="chip">⚡ Scanner inteligente</span><span class="chip">📊 Análise técnica</span><span class="chip green">🛡️ Carteira simulada</span></div>
     </div>
@@ -171,32 +171,32 @@ for col, label, value in [
 
 # Botão de retorno explícito nas telas secundárias (essencial no celular).
 if st.session_state.pagina != "🏠 Início":
-    if st.button("← Voltar ao Início", use_container_width=True, key="nav_back_home_v38"):
+    if st.button("← Voltar ao Início", use_container_width=True, key="nav_back_home_v46_1"):
         st.session_state.pagina = "🏠 Início"
         st.rerun()
 
 if st.session_state.pagina == "🧪 Backtest":
-    st.markdown("<div class='section'>🧪 Laboratório de Backtest V46</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section'>🧪 Laboratório de Backtest V46.1</div>", unsafe_allow_html=True)
     st.caption("Teste uma regra simples sobre dados históricos. O resultado é uma simulação retrospectiva e não representa previsão nem recomendação de investimento.")
 
     b1, b2, b3 = st.columns(3)
     with b1:
-        bt_ativo = st.selectbox("Ativo", ativos, index=ativos.index("PETR4") if "PETR4" in ativos else 0, key="backtest_ativo_v46")
+        bt_ativo = st.selectbox("Ativo", ativos, index=ativos.index("PETR4") if "PETR4" in ativos else 0, key="backtest_ativo_v46_1")
     with b2:
-        bt_periodo = st.selectbox("Período histórico", ["1y", "2y", "5y"], index=0, key="backtest_periodo_v46")
+        bt_periodo = st.selectbox("Período histórico", ["1y", "2y", "5y"], index=0, key="backtest_periodo_v46_1")
     with b3:
-        bt_capital = st.number_input("Capital inicial (R$)", min_value=100.0, value=10000.0, step=500.0, key="backtest_capital_v46")
+        bt_capital = st.number_input("Capital inicial (R$)", min_value=100.0, value=10000.0, step=500.0, key="backtest_capital_v46_1")
 
     b4, b5 = st.columns(2)
     with b4:
-        bt_curta = st.slider("Média curta", 3, 50, 10, key="backtest_curta_v46")
+        bt_curta = st.slider("Média curta", 3, 50, 10, key="backtest_curta_v46_1")
     with b5:
-        bt_longa = st.slider("Média longa", 10, 200, 30, key="backtest_longa_v46")
+        bt_longa = st.slider("Média longa", 10, 200, 30, key="backtest_longa_v46_1")
 
     if bt_curta >= bt_longa:
         st.warning("A média curta precisa ser menor que a média longa.")
     else:
-        if st.button("▶️ Executar backtest", use_container_width=True, key="run_backtest_v46"):
+        if st.button("▶️ Executar backtest", use_container_width=True, key="run_backtest_v46_1"):
             try:
                 hist = dados_yahoo(bt_ativo, periodo=bt_periodo, intervalo="1d").copy()
                 hist["SMA_CURTA"] = hist["Close"].rolling(bt_curta).mean()
@@ -264,24 +264,6 @@ if st.session_state.pagina == "⚙️ Config":
     st.info("💡 O Hub local não inventa cotações. Para dados realmente tick-by-tick, conecte um feed licenciado/WebSocket; Google pode ser usado apenas como referência de validação, não como fonte de ingestão.")
     st.stop()
 
-st.markdown("""
-<div class="client-strip"><span><strong>BolsaIA</strong> · painel inteligente para leitura de mercado</span><span>🔒 Ambiente demonstrativo · sem envio de ordens reais</span></div>
-<div class="trust-row">
-  <div class="trust-item"><b>⚡ Scanner</b><span>Encontra ativos que merecem atenção.</span></div>
-  <div class="trust-item"><b>📊 Análise</b><span>Organiza indicadores técnicos em uma visão simples.</span></div>
-  <div class="trust-item"><b>🛡️ Risco</b><span>Simula stop, alvo e exposição por operação.</span></div>
-</div>
-""", unsafe_allow_html=True)
-st.caption("Ferramenta educacional. Indicadores, scores e cenários são hipotéticos e não constituem recomendação de investimento.")
-st.caption("🧭 V46 · Dashboard Profissional + Realtime Hub + Painel da Operação + Paper Trading + Central de Alertas + Backtest · Nenhuma ordem real é enviada")
-
-# V41: painel do motor real-time local.
-try:
-    _health = st.session_state.rt_engine.health()
-    st.markdown(f'''<div class="client-strip"><span><strong>📡 Motor Real-Time V41</strong> · {_health['cached']} cotações em cache · {_health['fresh']} frescas · TTL {_health['ttl_seconds']}s</span><span>⚡ Atualização incremental</span></div>''', unsafe_allow_html=True)
-except Exception:
-    pass
-
 # V15: status operacional, qualidade do dado e horário da última atualização.
 def _status_mercado():
     agora = pd.Timestamp.now(tz="America/Sao_Paulo")
@@ -303,7 +285,7 @@ def _texto_tendencia(media_score):
     return "🔴 Mercado mais defensivo", "Os sinais técnicos estão menos favoráveis; vale acompanhar o risco com atenção."
 
 if st.session_state.pagina == "🏠 Início":
-    st.markdown('<div class="section">🚀 Dashboard Profissional V46</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section">🚀 Dashboard Profissional V46.1</div>', unsafe_allow_html=True)
     st.info("👋 **Bem-vindo à BolsaIA.** A V46 transforma o Início em um painel central: mercado, ativos, alertas, dados e ferramentas ficam acessíveis em uma única visão.")
 
     # V46: cards de mercado. Os valores são obtidos sob demanda para evitar travamentos
@@ -386,6 +368,26 @@ if st.session_state.pagina == "🏠 Início":
     st.write("**2.** Abra a **Análise** para estudar indicadores e histórico.")
     st.write("**3.** Use **Backtest** e **Paper Trading** para testar cenários sem enviar ordens reais.")
     st.caption("💡 Dados de mercado podem ter atraso conforme a fonte. Sempre confira fonte e horário antes de tomar qualquer decisão financeira.")
+
+
+st.markdown("""
+<div class="client-strip"><span><strong>BolsaIA</strong> · painel inteligente para leitura de mercado</span><span>🔒 Ambiente demonstrativo · sem envio de ordens reais</span></div>
+<div class="trust-row">
+  <div class="trust-item"><b>⚡ Scanner</b><span>Encontra ativos que merecem atenção.</span></div>
+  <div class="trust-item"><b>📊 Análise</b><span>Organiza indicadores técnicos em uma visão simples.</span></div>
+  <div class="trust-item"><b>🛡️ Risco</b><span>Simula stop, alvo e exposição por operação.</span></div>
+</div>
+""", unsafe_allow_html=True)
+st.caption("Ferramenta educacional. Indicadores, scores e cenários são hipotéticos e não constituem recomendação de investimento.")
+st.caption("🧭 V46.1 · Dashboard Profissional + Realtime Hub + Painel da Operação + Paper Trading + Central de Alertas + Backtest · Nenhuma ordem real é enviada")
+
+# V41: painel do motor real-time local.
+try:
+    _health = st.session_state.rt_engine.health()
+    st.markdown(f'''<div class="client-strip"><span><strong>📡 Motor Real-Time V41</strong> · {_health['cached']} cotações em cache · {_health['fresh']} frescas · TTL {_health['ttl_seconds']}s</span><span>⚡ Atualização incremental</span></div>''', unsafe_allow_html=True)
+except Exception:
+    pass
+
 
 
 if st.session_state.pagina == "⚡ Scanner":
@@ -1570,7 +1572,7 @@ def painel():
         st.caption("Upstream alternativo: Yahoo Finance. O Hub local não transforma um feed atrasado em tick-by-tick.")
 
 
-st.markdown("<div class='footer'>BolsaIA V46 · Inteligência de Mercado · Demonstração educacional · Dashboard Profissional + Hub local + Painel da Operação + Paper Trading + Alertas + Backtest</div>", unsafe_allow_html=True)
+st.markdown("<div class='footer'>BolsaIA V46.1 · Inteligência de Mercado · Demonstração educacional · Dashboard Profissional + Hub local + Painel da Operação + Paper Trading + Alertas + Backtest</div>", unsafe_allow_html=True)
 
 if hasattr(st, "fragment"):
     @st.fragment(run_every="5s")
