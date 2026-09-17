@@ -14,7 +14,7 @@ from dividendos import obter_dividendos_yahoo
 from realtime_engine import RealtimeEngine
 
 st.set_page_config(
-    page_title="BolsaIA V44 | Inteligência de Mercado",
+    page_title="BolsaIA V45 | Inteligência de Mercado",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -132,7 +132,7 @@ div[data-testid="stMetric"] { background:rgba(13,24,42,.82); border:1px solid rg
   <div class="brand-row">
     <img class="brand-logo" src="data:image/png;base64,LOGO_B64" />
     <div>
-      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V44</span></h1>
+      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V45</span></h1>
       <div class="tagline">Inteligência de mercado para análise técnica, radar e gestão de risco.</div>
       <div class="mini"><span class="chip">⚡ Scanner inteligente</span><span class="chip">📊 Análise técnica</span><span class="chip green">🛡️ Carteira simulada</span></div>
     </div>
@@ -150,14 +150,15 @@ if "logado" not in st.session_state:
     st.session_state.logado = False
 
 st.markdown("<div class='section'>🚀 Atalhos</div>", unsafe_allow_html=True)
-nav_cols = st.columns(6)
+nav_cols = st.columns(7)
 for col, label, value in [
     (nav_cols[0], "🏠 Início", "🏠 Início"),
     (nav_cols[1], "⚡ Scanner", "⚡ Scanner"),
     (nav_cols[2], "📊 Análise", "📊 Análise"),
     (nav_cols[3], "⚙️ Config", "⚙️ Config"),
     (nav_cols[4], "🔔 Alertas", "🔔 Alertas"),
-    (nav_cols[5], "👤 Login", "👤 Login"),
+    (nav_cols[5], "🧪 Backtest", "🧪 Backtest"),
+    (nav_cols[6], "👤 Login", "👤 Login"),
 ]:
     with col:
         if st.button(label, use_container_width=True, key=f"nav_{value}"):
@@ -169,6 +170,64 @@ if st.session_state.pagina != "🏠 Início":
     if st.button("← Voltar ao Início", use_container_width=True, key="nav_back_home_v38"):
         st.session_state.pagina = "🏠 Início"
         st.rerun()
+
+if st.session_state.pagina == "🧪 Backtest":
+    st.markdown("<div class='section'>🧪 Laboratório de Backtest V45</div>", unsafe_allow_html=True)
+    st.caption("Teste uma regra simples sobre dados históricos. O resultado é uma simulação retrospectiva e não representa previsão nem recomendação de investimento.")
+
+    b1, b2, b3 = st.columns(3)
+    with b1:
+        bt_ativo = st.selectbox("Ativo", ativos, index=ativos.index("PETR4") if "PETR4" in ativos else 0, key="backtest_ativo_v45")
+    with b2:
+        bt_periodo = st.selectbox("Período histórico", ["1y", "2y", "5y"], index=0, key="backtest_periodo_v45")
+    with b3:
+        bt_capital = st.number_input("Capital inicial (R$)", min_value=100.0, value=10000.0, step=500.0, key="backtest_capital_v45")
+
+    b4, b5 = st.columns(2)
+    with b4:
+        bt_curta = st.slider("Média curta", 3, 50, 10, key="backtest_curta_v45")
+    with b5:
+        bt_longa = st.slider("Média longa", 10, 200, 30, key="backtest_longa_v45")
+
+    if bt_curta >= bt_longa:
+        st.warning("A média curta precisa ser menor que a média longa.")
+    else:
+        if st.button("▶️ Executar backtest", use_container_width=True, key="run_backtest_v45"):
+            try:
+                hist = dados_yahoo(bt_ativo, periodo=bt_periodo, intervalo="1d").copy()
+                hist["SMA_CURTA"] = hist["Close"].rolling(bt_curta).mean()
+                hist["SMA_LONGA"] = hist["Close"].rolling(bt_longa).mean()
+                hist = hist.dropna(subset=["Close", "SMA_CURTA", "SMA_LONGA"]).copy()
+                hist["sinal"] = (hist["SMA_CURTA"] > hist["SMA_LONGA"]).astype(int)
+                hist["posicao"] = hist["sinal"].shift(1).fillna(0)
+                hist["retorno_ativo"] = hist["Close"].pct_change().fillna(0)
+                hist["retorno_estrategia"] = hist["posicao"] * hist["retorno_ativo"]
+                hist["equity"] = float(bt_capital) * (1 + hist["retorno_estrategia"]).cumprod()
+                final = float(hist["equity"].iloc[-1])
+                retorno = (final / float(bt_capital) - 1) * 100
+                buyhold = (float(hist["Close"].iloc[-1]) / float(hist["Close"].iloc[0]) - 1) * 100
+                trocas = int(hist["sinal"].diff().abs().fillna(0).sum())
+                dd = (hist["equity"] / hist["equity"].cummax() - 1) * 100
+                maxdd = float(dd.min())
+
+                m1, m2, m3, m4 = st.columns(4)
+                m1.metric("Patrimônio final", f"R$ {final:,.2f}".replace(",","X").replace(".",",").replace("X","."))
+                m2.metric("Retorno simulado", f"{retorno:+.2f}%")
+                m3.metric("Máx. drawdown", f"{maxdd:.2f}%")
+                m4.metric("Trocas de posição", f"{trocas}")
+
+                st.markdown("### 📊 Curva do patrimônio")
+                st.line_chart(hist[["equity"]], use_container_width=True)
+
+                st.markdown("### 🔍 Comparação histórica")
+                c1, c2 = st.columns(2)
+                c1.metric("Estratégia testada", f"{retorno:+.2f}%")
+                c2.metric("Comprar e manter", f"{buyhold:+.2f}%")
+                st.dataframe(hist[["Close", "SMA_CURTA", "SMA_LONGA", "sinal", "equity"]].tail(30), use_container_width=True)
+                st.info("ℹ️ Este laboratório usa somente dados históricos disponíveis na fonte consultada. Custos, impostos, slippage, liquidez e execução intradiária não estão modelados; por isso o resultado pode diferir de uma operação real.")
+            except Exception as exc:
+                st.error(f"Não foi possível executar o backtest: {exc}")
+    st.stop()
 
 if st.session_state.pagina == "👤 Login":
     st.markdown("<div class='section'>👤 Área do usuário</div>", unsafe_allow_html=True)
@@ -210,7 +269,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 st.caption("Ferramenta educacional. Indicadores, scores e cenários são hipotéticos e não constituem recomendação de investimento.")
-st.caption("🧭 V44 · Realtime Hub + Painel da Operação + Paper Trading + Central de Alertas · Nenhuma ordem real é enviada")
+st.caption("🧭 V45 · Realtime Hub + Painel da Operação + Paper Trading + Central de Alertas + Backtest · Nenhuma ordem real é enviada")
 
 # V41: painel do motor real-time local.
 try:
@@ -1438,7 +1497,7 @@ def painel():
         st.caption("Upstream alternativo: Yahoo Finance. O Hub local não transforma um feed atrasado em tick-by-tick.")
 
 
-st.markdown("<div class='footer'>BolsaIA V44 · Inteligência de Mercado · Demonstração educacional · Hub local + Painel da Operação + feed configurado</div>", unsafe_allow_html=True)
+st.markdown("<div class='footer'>BolsaIA V45 · Inteligência de Mercado · Demonstração educacional · Hub local + Painel da Operação + Paper Trading + Alertas + Backtest</div>", unsafe_allow_html=True)
 
 if hasattr(st, "fragment"):
     @st.fragment(run_every="5s")
