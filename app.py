@@ -14,6 +14,23 @@ from analisador import analisar, analisar_candles, calcular_plano
 from dividendos import obter_dividendos_yahoo
 from realtime_engine import RealtimeEngine
 
+SETOR_ATIVO = {
+    "PETR3":"Petróleo", "PETR4":"Petróleo", "PRIO3":"Petróleo",
+    "VALE3":"Mineração", "CSNA3":"Mineração", "CMIN3":"Mineração", "GGBR4":"Siderurgia", "GOAU4":"Siderurgia",
+    "ITUB3":"Bancos", "ITUB4":"Bancos", "ITSA4":"Bancos/Participações", "BBAS3":"Bancos", "BBDC3":"Bancos", "BBDC4":"Bancos",
+    "BBSE3":"Seguros", "B3SA3":"Serviços financeiros",
+    "CMIG3":"Energia", "CMIG4":"Energia", "ELET3":"Energia", "ELET6":"Energia", "CPLE6":"Energia", "CPFE3":"Energia", "TAEE11":"Energia", "EGIE3":"Energia",
+    "SBSP3":"Saneamento", "WEGE3":"Indústria", "EMBR3":"Indústria", "TOTS3":"Tecnologia",
+    "RADL3":"Saúde", "HYPE3":"Saúde", "VIVT3":"Telecom", "ABEV3":"Consumo", "MGLU3":"Varejo", "LREN3":"Varejo",
+    "RENT3":"Transportes", "AZUL4":"Transportes", "BRFS3":"Alimentos", "SUZB3":"Papel e celulose", "KLBN11":"Papel e celulose",
+    "XPML11":"FIIs / Imobiliário", "MXRF11":"FIIs / Imobiliário", "HGLG11":"FIIs / Imobiliário", "BTLG11":"FIIs / Imobiliário",
+    "KNCR11":"FIIs / Imobiliário", "XPLG11":"FIIs / Imobiliário", "TRXF11":"FIIs / Imobiliário", "XPIN11":"FIIs / Imobiliário",
+    "VISC11":"FIIs / Imobiliário", "HSML11":"FIIs / Imobiliário", "MALL11":"FIIs / Imobiliário",
+    "BOVA11":"ETFs", "SMAL11":"ETFs", "IVVB11":"ETFs", "DIVO11":"ETFs", "GOLD11":"ETFs", "HASH11":"ETFs", "XINA11":"ETFs", "WRLD11":"ETFs",
+    "AAPL34":"BDRs", "MSFT34":"BDRs", "GOOG34":"BDRs", "AMZO34":"BDRs", "NVDC34":"BDRs", "TSLA34":"BDRs"
+}
+
+
 st.set_page_config(
     page_title="BolsaIA V47 | Inteligência de Mercado",
     page_icon="📈",
@@ -395,11 +412,11 @@ if st.session_state.pagina == "🏠 Início":
             st.plotly_chart(fig_radar, use_container_width=True, config={"displaylogo": False, "responsive": True})
         with rright:
             st.markdown("#### 📋 Ranking do radar")
-            view = rdf.copy()
+            view = rdf.copy().sort_values("Variação %", ascending=False)
             view["Preço"] = view["Preço"].map(_fmt_brl)
             view["Variação %"] = view["Variação %"].map(lambda x: f"{x:+.2f}%" if pd.notna(x) else "N/D")
             view["Volume"] = view["Volume"].map(lambda x: f"{x:,.0f}".replace(",", "."))
-            st.dataframe(view.sort_values("Variação %", ascending=False), use_container_width=True, hide_index=True)
+            st.dataframe(view, use_container_width=True, hide_index=True)
     else:
         st.warning("Não foi possível montar o radar agora. A fonte de dados pode estar indisponível.")
 
@@ -484,21 +501,6 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 ativos = list(ATIVOS_B3.keys())
-SETOR_ATIVO = {
-    "PETR3":"Petróleo", "PETR4":"Petróleo", "PRIO3":"Petróleo",
-    "VALE3":"Mineração", "CSNA3":"Mineração", "CMIN3":"Mineração", "GGBR4":"Siderurgia", "GOAU4":"Siderurgia",
-    "ITUB3":"Bancos", "ITUB4":"Bancos", "ITSA4":"Bancos/Participações", "BBAS3":"Bancos", "BBDC3":"Bancos", "BBDC4":"Bancos",
-    "BBSE3":"Seguros", "B3SA3":"Serviços financeiros",
-    "CMIG3":"Energia", "CMIG4":"Energia", "ELET3":"Energia", "ELET6":"Energia", "CPLE6":"Energia", "CPFE3":"Energia", "TAEE11":"Energia", "EGIE3":"Energia",
-    "SBSP3":"Saneamento", "WEGE3":"Indústria", "EMBR3":"Indústria", "TOTS3":"Tecnologia",
-    "RADL3":"Saúde", "HYPE3":"Saúde", "VIVT3":"Telecom", "ABEV3":"Consumo", "MGLU3":"Varejo", "LREN3":"Varejo",
-    "RENT3":"Transportes", "AZUL4":"Transportes", "BRFS3":"Alimentos", "SUZB3":"Papel e celulose", "KLBN11":"Papel e celulose",
-    "XPML11":"FIIs / Imobiliário", "MXRF11":"FIIs / Imobiliário", "HGLG11":"FIIs / Imobiliário", "BTLG11":"FIIs / Imobiliário",
-    "KNCR11":"FIIs / Imobiliário", "XPLG11":"FIIs / Imobiliário", "TRXF11":"FIIs / Imobiliário", "XPIN11":"FIIs / Imobiliário",
-    "VISC11":"FIIs / Imobiliário", "HSML11":"FIIs / Imobiliário", "MALL11":"FIIs / Imobiliário",
-    "BOVA11":"ETFs", "SMAL11":"ETFs", "IVVB11":"ETFs", "DIVO11":"ETFs", "GOLD11":"ETFs", "HASH11":"ETFs", "XINA11":"ETFs", "WRLD11":"ETFs",
-    "AAPL34":"BDRs", "MSFT34":"BDRs", "GOOG34":"BDRs", "AMZO34":"BDRs", "NVDC34":"BDRs", "TSLA34":"BDRs"
-}
 with st.expander("🧭 Filtro por setor", expanded=False):
     setores = sorted(set(SETOR_ATIVO.values()))
     setores_sel = st.multiselect("Setores", setores, default=setores)
