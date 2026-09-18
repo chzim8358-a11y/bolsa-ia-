@@ -32,7 +32,7 @@ SETOR_ATIVO = {
 
 
 st.set_page_config(
-    page_title="BolsaIA V47 | Inteligência de Mercado",
+    page_title="BolsaIA V48 | Inteligência de Mercado",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -150,7 +150,7 @@ div[data-testid="stMetric"] { background:rgba(13,24,42,.82); border:1px solid rg
   <div class="brand-row">
     <img class="brand-logo" src="data:image/png;base64,LOGO_B64" />
     <div>
-      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V47</span></h1>
+      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V48</span></h1>
       <div class="tagline">Inteligência de mercado para análise técnica, radar e gestão de risco.</div>
       <div class="mini"><span class="chip">⚡ Scanner inteligente</span><span class="chip">📊 Análise técnica</span><span class="chip green">🛡️ Carteira simulada</span></div>
     </div>
@@ -194,7 +194,7 @@ if st.session_state.pagina != "🏠 Início":
         st.rerun()
 
 if st.session_state.pagina == "🧪 Backtest":
-    st.markdown("<div class='section'>🧪 Laboratório de Backtest V47</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section'>🧪 Laboratório de Backtest V48</div>", unsafe_allow_html=True)
     st.caption("Teste uma regra simples sobre dados históricos. O resultado é uma simulação retrospectiva e não representa previsão nem recomendação de investimento.")
 
     b1, b2, b3 = st.columns(3)
@@ -420,6 +420,48 @@ if st.session_state.pagina == "🏠 Início":
     else:
         st.warning("Não foi possível montar o radar agora. A fonte de dados pode estar indisponível.")
 
+    # V48 — Comparador Multiativo: coloca vários ativos lado a lado usando
+    # exatamente os dados observados pelo Radar 360, evitando novas chamadas
+    # de rede e deixando a comparação rápida e transparente.
+    st.markdown("### 🔎 Comparador Multiativo V48")
+    st.caption("Compare até 4 ativos observados pelo Radar 360. A comparação é descritiva e não constitui recomendação de investimento.")
+    radar_options = [r["Ativo"] for r in radar_rows] if radar_rows else radar_tickers
+    default_compare = radar_options[:4]
+    selecionados = st.multiselect(
+        "Ativos para comparar",
+        radar_options,
+        default=default_compare,
+        max_selections=4,
+        key="v48_comparador_ativos"
+    )
+    if selecionados:
+        comp = rdf[rdf["Ativo"].isin(selecionados)].copy()
+        comp["Setor"] = comp["Ativo"].map(lambda x: SETOR_ATIVO.get(x, "Outros"))
+        comp["Variação %"] = comp["Variação %"].round(2)
+        comp["Preço"] = comp["Preço"].round(2)
+        comp["Volume"] = comp["Volume"].astype(float).round(0)
+        st.dataframe(
+            comp[["Ativo", "Setor", "Preço", "Variação %", "Volume"]],
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                "Preço": st.column_config.NumberColumn("Preço (R$)", format="R$ %.2f"),
+                "Variação %": st.column_config.NumberColumn("Variação (%)", format="%+.2f%%"),
+                "Volume": st.column_config.NumberColumn("Volume", format="%.0f"),
+            },
+        )
+        csv = comp[["Ativo", "Setor", "Preço", "Variação %", "Volume"]].to_csv(index=False).encode("utf-8")
+        st.download_button(
+            "⬇️ Exportar comparação CSV",
+            data=csv,
+            file_name="bolsaia_comparador_v48.csv",
+            mime="text/csv",
+            use_container_width=True,
+            key="v48_export_comparador"
+        )
+    else:
+        st.info("Selecione pelo menos um ativo para comparar.")
+
     st.markdown("#### 🧭 Mapa por setor")
     setor_rows = []
     if radar_rows:
@@ -459,7 +501,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 st.caption("Ferramenta educacional. Indicadores, scores e cenários são hipotéticos e não constituem recomendação de investimento.")
-st.caption("🧭 V47 · Radar Mercado 360 + Dashboard Profissional + Realtime Hub + Painel da Operação + Paper Trading + Central de Alertas + Backtest · Nenhuma ordem real é enviada")
+st.caption("🧭 V48 · Comparador Multiativo + Radar Mercado 360 + Dashboard Profissional + Realtime Hub + Painel da Operação + Paper Trading + Central de Alertas + Backtest · Nenhuma ordem real é enviada")
 
 # V41: painel do motor real-time local.
 try:
@@ -1637,7 +1679,7 @@ def painel():
         st.caption("Upstream alternativo: Yahoo Finance. O Hub local não transforma um feed atrasado em tick-by-tick.")
 
 
-st.markdown("<div class='footer'>BolsaIA V47 · Inteligência de Mercado · Demonstração educacional · Dashboard Profissional + Hub local + Painel da Operação + Paper Trading + Alertas + Backtest</div>", unsafe_allow_html=True)
+st.markdown("<div class='footer'>BolsaIA V48 · Inteligência de Mercado · Demonstração educacional · Dashboard Profissional + Hub local + Painel da Operação + Paper Trading + Alertas + Backtest</div>", unsafe_allow_html=True)
 
 if hasattr(st, "fragment"):
     @st.fragment(run_every="5s")
