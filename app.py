@@ -32,7 +32,7 @@ SETOR_ATIVO = {
 
 
 st.set_page_config(
-    page_title="BolsaIA V49 | Inteligência de Mercado",
+    page_title="BolsaIA V50 | Inteligência de Mercado",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -150,7 +150,7 @@ div[data-testid="stMetric"] { background:rgba(13,24,42,.82); border:1px solid rg
   <div class="brand-row">
     <img class="brand-logo" src="data:image/png;base64,LOGO_B64" />
     <div>
-      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V49</span></h1>
+      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V50</span></h1>
       <div class="tagline">Inteligência de mercado para análise técnica, radar e gestão de risco.</div>
       <div class="mini"><span class="chip">⚡ Scanner inteligente</span><span class="chip">📊 Análise técnica</span><span class="chip green">🛡️ Carteira simulada</span></div>
     </div>
@@ -172,7 +172,7 @@ if "logado" not in st.session_state:
 ativos = list(ATIVOS_B3.keys())
 
 st.markdown("<div class='section'>🚀 Atalhos</div>", unsafe_allow_html=True)
-nav_cols = st.columns(7)
+nav_cols = st.columns(8)
 for col, label, value in [
     (nav_cols[0], "🏠 Início", "🏠 Início"),
     (nav_cols[1], "⚡ Scanner", "⚡ Scanner"),
@@ -180,7 +180,8 @@ for col, label, value in [
     (nav_cols[3], "⚙️ Config", "⚙️ Config"),
     (nav_cols[4], "🔔 Alertas", "🔔 Alertas"),
     (nav_cols[5], "🧪 Backtest", "🧪 Backtest"),
-    (nav_cols[6], "👤 Login", "👤 Login"),
+    (nav_cols[6], "📈 Histórico", "📈 Histórico"),
+    (nav_cols[7], "👤 Login", "👤 Login"),
 ]:
     with col:
         if st.button(label, use_container_width=True, key=f"nav_{value}"):
@@ -251,6 +252,110 @@ if st.session_state.pagina == "🧪 Backtest":
                 st.error(f"Não foi possível executar o backtest: {exc}")
     st.stop()
 
+
+if st.session_state.pagina == "📈 Histórico":
+    st.markdown("<div class='section'>📈 Histórico & Desempenho 2.0 · V50</div>", unsafe_allow_html=True)
+    st.caption("Laboratório histórico para visualizar preço, retorno, drawdown, volatilidade e volume. Os resultados são descritivos e usam os dados disponíveis na fonte consultada.")
+
+    h1, h2, h3 = st.columns(3)
+    with h1:
+        hist_ativo = st.selectbox("Ativo", ativos, index=ativos.index("PETR4") if "PETR4" in ativos else 0, key="v50_hist_ativo")
+    with h2:
+        hist_periodo_label = st.selectbox("Período", ["1 mês", "3 meses", "6 meses", "1 ano", "5 anos"], index=2, key="v50_hist_periodo")
+    with h3:
+        hist_benchmark = st.selectbox("Referência opcional", ["Nenhuma", "IBOV"], key="v50_hist_benchmark")
+
+    periodo_map = {"1 mês":"1mo", "3 meses":"3mo", "6 meses":"6mo", "1 ano":"1y", "5 anos":"5y"}
+    hist_periodo = periodo_map[hist_periodo_label]
+
+    @st.cache_data(ttl=120, show_spinner=False)
+    def _historico_v50(ticker, periodo):
+        return dados_yahoo(ticker, periodo=periodo, intervalo="1d").copy()
+
+    try:
+        hist = _historico_v50(hist_ativo, hist_periodo)
+        hist = hist.dropna(subset=["Close"]).copy()
+        if len(hist) < 2:
+            raise ValueError("Não há dados históricos suficientes para este período.")
+
+        close = pd.to_numeric(hist["Close"], errors="coerce").dropna()
+        inicio = float(close.iloc[0])
+        fim = float(close.iloc[-1])
+        retorno = ((fim / inicio) - 1) * 100 if inicio else None
+        maximo = float(close.max())
+        minimo = float(close.min())
+        drawdown = (close / close.cummax() - 1) * 100
+        max_dd = float(drawdown.min())
+        retornos = close.pct_change().dropna()
+        volatilidade = float(retornos.std() * math.sqrt(252) * 100) if len(retornos) > 1 else None
+        media_volume = float(pd.to_numeric(hist["Volume"], errors="coerce").replace(0, pd.NA).dropna().mean()) if "Volume" in hist else None
+        idade = _idade_dado_minutos(hist.index)
+        status = _status_dado(idade)
+
+        m1, m2, m3, m4, m5 = st.columns(5)
+        m1.metric("Preço inicial", f"R$ {inicio:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+        m2.metric("Preço atual", f"R$ {fim:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+        m3.metric("Retorno no período", f"{retorno:+.2f}%" if retorno is not None else "N/D")
+        m4.metric("Máx. drawdown", f"{max_dd:.2f}%")
+        m5.metric("Volatilidade anualizada", f"{volatilidade:.2f}%" if volatilidade is not None else "N/D")
+
+        st.markdown("### 📊 Evolução histórica")
+        chart_df = pd.DataFrame({"Preço": close})
+        if hist_benchmark == "IBOV":
+            try:
+                ibov = _historico_v50("^BVSP", hist_periodo)
+                ibov_close = pd.to_numeric(ibov["Close"], errors="coerce").dropna()
+                base_ativo = close / inicio * 100
+                base_ibov = ibov_close / float(ibov_close.iloc[0]) * 100
+                comp = pd.concat([base_ativo.rename(hist_ativo), base_ibov.rename("IBOV")], axis=1).dropna()
+                st.line_chart(comp)
+                st.caption("Comparação rebased para 100 no início do período; isso facilita comparar a variação relativa, sem representar uma recomendação.")
+            except Exception as exc:
+                st.warning(f"Não foi possível carregar o IBOV para comparação: {exc}")
+                st.line_chart(chart_df)
+        else:
+            st.line_chart(chart_df)
+
+        st.markdown("### 📉 Drawdown")
+        dd_df = pd.DataFrame({"Drawdown %": drawdown})
+        st.line_chart(dd_df)
+
+        st.markdown("### 📦 Volume")
+        if "Volume" in hist:
+            vol_df = pd.to_numeric(hist["Volume"], errors="coerce").fillna(0)
+            st.bar_chart(pd.DataFrame({"Volume": vol_df}))
+            st.caption("Volume médio no período: " + (f"{media_volume:,.0f}".replace(",", ".") if media_volume is not None else "N/D"))
+        else:
+            st.info("A fonte não forneceu volume para este ativo.")
+
+        st.markdown("### 🔎 Estatísticas do período")
+        stats = pd.DataFrame([{
+            "Ativo": hist_ativo,
+            "Período": hist_periodo_label,
+            "Observações": len(close),
+            "Mínimo": minimo,
+            "Máximo": maximo,
+            "Retorno %": retorno,
+            "Drawdown máximo %": max_dd,
+            "Volatilidade anualizada %": volatilidade,
+            "Fonte": "Yahoo Finance",
+            "Status": status,
+        }])
+        st.dataframe(stats, use_container_width=True, hide_index=True, column_config={
+            "Mínimo": st.column_config.NumberColumn(format="R$ %.2f"),
+            "Máximo": st.column_config.NumberColumn(format="R$ %.2f"),
+            "Retorno %": st.column_config.NumberColumn(format="%+.2f%%"),
+            "Drawdown máximo %": st.column_config.NumberColumn(format="%.2f%%"),
+            "Volatilidade anualizada %": st.column_config.NumberColumn(format="%.2f%%"),
+        })
+
+        export = hist.reset_index().to_csv(index=False).encode("utf-8")
+        st.download_button("⬇️ Exportar histórico CSV", export, file_name=f"bolsaia_v50_historico_{hist_ativo}.csv", mime="text/csv", use_container_width=True, key="v50_export_historico")
+        st.caption(f"📡 Fonte: Yahoo Finance · Última observação disponível: {hist.index[-1].strftime('%d/%m/%Y %H:%M')} · {status}.")
+    except Exception as exc:
+        st.error(f"Não foi possível carregar o histórico de {hist_ativo}: {exc}")
+    st.stop()
+
 if st.session_state.pagina == "👤 Login":
     st.markdown("<div class='section'>👤 Área do usuário</div>", unsafe_allow_html=True)
     st.info("🔐 Login demonstrativo da V28. O acesso é local à sessão nesta versão; ainda não há autenticação externa nem banco de usuários.")
@@ -303,7 +408,7 @@ def _texto_tendencia(media_score):
     return "🔴 Mercado mais defensivo", "Os sinais técnicos estão menos favoráveis; vale acompanhar o risco com atenção."
 
 if st.session_state.pagina == "🏠 Início":
-    st.markdown('<div class="section">🚀 Dashboard Profissional V47</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section">🚀 Dashboard Profissional V50</div>', unsafe_allow_html=True)
     st.info("👋 **Bem-vindo à BolsaIA.** A V46 transforma o Início em um painel central: mercado, ativos, alertas, dados e ferramentas ficam acessíveis em uma única visão.")
 
     # V46: cards de mercado. Os valores são obtidos sob demanda para evitar travamentos
@@ -363,10 +468,13 @@ if st.session_state.pagina == "🏠 Início":
             st.caption("Sua watchlist está vazia.")
     with right:
         st.markdown("### ⚡ Ações rápidas")
-        for label, value in [("⚡ Abrir Scanner", "⚡ Scanner"), ("📊 Abrir Análise", "📊 Análise"), ("🧪 Abrir Backtest", "🧪 Backtest"), ("🔔 Ver Alertas", "🔔 Alertas")]:
+        for label, value in [("⚡ Abrir Scanner", "⚡ Scanner"), ("📊 Abrir Análise", "📊 Análise"), ("🧪 Abrir Backtest", "🧪 Backtest"), ("🔔 Ver Alertas", "🔔 Alertas"), ("📈 Abrir Histórico", "📈 Histórico")]:
             if st.button(label, use_container_width=True, key=f"v47_home_{value}"):
                 st.session_state.pagina = value
                 st.rerun()
+
+    st.markdown("### 📈 Histórico & Desempenho 2.0")
+    st.info("🆕 V50: agora a BolsaIA possui um laboratório histórico dedicado para estudar evolução de preço, retorno, drawdown, volatilidade e volume. Abra **📈 Histórico** no menu acima.")
 
     # V47 — Radar Mercado 360: leitura de mercado em uma única tela.
     st.markdown("### 🌐 Radar Mercado 360°")
@@ -423,7 +531,7 @@ if st.session_state.pagina == "🏠 Início":
     # V48 — Comparador Multiativo: coloca vários ativos lado a lado usando
     # exatamente os dados observados pelo Radar 360, evitando novas chamadas
     # de rede e deixando a comparação rápida e transparente.
-    st.markdown("### 🔎 Comparador Multiativo V49")
+    st.markdown("### 🔎 Comparador Multiativo V50")
     st.caption("Compare até 4 ativos observados pelo Radar 360. A comparação é descritiva e não constitui recomendação de investimento.")
     radar_options = [r["Ativo"] for r in radar_rows] if radar_rows else radar_tickers
     default_compare = radar_options[:4]
