@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import base64
 import math
+import plotly.graph_objects as go
 from pathlib import Path
 
 from dados import (
@@ -14,7 +15,7 @@ from dividendos import obter_dividendos_yahoo
 from realtime_engine import RealtimeEngine
 
 st.set_page_config(
-    page_title="BolsaIA V46.1 | Inteligência de Mercado",
+    page_title="BolsaIA V47 | Inteligência de Mercado",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -132,7 +133,7 @@ div[data-testid="stMetric"] { background:rgba(13,24,42,.82); border:1px solid rg
   <div class="brand-row">
     <img class="brand-logo" src="data:image/png;base64,LOGO_B64" />
     <div>
-      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V46.1</span></h1>
+      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V47</span></h1>
       <div class="tagline">Inteligência de mercado para análise técnica, radar e gestão de risco.</div>
       <div class="mini"><span class="chip">⚡ Scanner inteligente</span><span class="chip">📊 Análise técnica</span><span class="chip green">🛡️ Carteira simulada</span></div>
     </div>
@@ -176,7 +177,7 @@ if st.session_state.pagina != "🏠 Início":
         st.rerun()
 
 if st.session_state.pagina == "🧪 Backtest":
-    st.markdown("<div class='section'>🧪 Laboratório de Backtest V46.1</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section'>🧪 Laboratório de Backtest V47</div>", unsafe_allow_html=True)
     st.caption("Teste uma regra simples sobre dados históricos. O resultado é uma simulação retrospectiva e não representa previsão nem recomendação de investimento.")
 
     b1, b2, b3 = st.columns(3)
@@ -285,7 +286,7 @@ def _texto_tendencia(media_score):
     return "🔴 Mercado mais defensivo", "Os sinais técnicos estão menos favoráveis; vale acompanhar o risco com atenção."
 
 if st.session_state.pagina == "🏠 Início":
-    st.markdown('<div class="section">🚀 Dashboard Profissional V46.1</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section">🚀 Dashboard Profissional V47</div>', unsafe_allow_html=True)
     st.info("👋 **Bem-vindo à BolsaIA.** A V46 transforma o Início em um painel central: mercado, ativos, alertas, dados e ferramentas ficam acessíveis em uma única visão.")
 
     # V46: cards de mercado. Os valores são obtidos sob demanda para evitar travamentos
@@ -346,9 +347,71 @@ if st.session_state.pagina == "🏠 Início":
     with right:
         st.markdown("### ⚡ Ações rápidas")
         for label, value in [("⚡ Abrir Scanner", "⚡ Scanner"), ("📊 Abrir Análise", "📊 Análise"), ("🧪 Abrir Backtest", "🧪 Backtest"), ("🔔 Ver Alertas", "🔔 Alertas")]:
-            if st.button(label, use_container_width=True, key=f"v46_home_{value}"):
+            if st.button(label, use_container_width=True, key=f"v47_home_{value}"):
                 st.session_state.pagina = value
                 st.rerun()
+
+    # V47 — Radar Mercado 360: leitura de mercado em uma única tela.
+    st.markdown("### 🌐 Radar Mercado 360°")
+    st.caption("Comparação observacional dos ativos monitorados. Os percentuais e volumes dependem da fonte e do horário de atualização.")
+    radar_tickers = ["PETR4", "VALE3", "ITUB4", "BBAS3", "BBDC4", "WEGE3", "CMIG4", "B3SA3"]
+    radar_rows = []
+    for ticker in radar_tickers:
+        try:
+            df_r = dados_yahoo(ticker, periodo="5d", intervalo="1d")
+            if df_r is not None and not df_r.empty and "Close" in df_r:
+                closes = df_r["Close"].dropna()
+                if len(closes) >= 2:
+                    ultimo = float(closes.iloc[-1])
+                    anterior = float(closes.iloc[-2])
+                    variacao = ((ultimo / anterior) - 1) * 100 if anterior else None
+                else:
+                    ultimo, variacao = float(closes.iloc[-1]), None
+                vol = float(df_r["Volume"].dropna().iloc[-1]) if "Volume" in df_r and not df_r["Volume"].dropna().empty else 0
+                radar_rows.append({"Ativo": ticker, "Preço": ultimo, "Variação %": variacao, "Volume": vol})
+        except Exception:
+            continue
+    if radar_rows:
+        rdf = pd.DataFrame(radar_rows)
+        rleft, rright = st.columns([1.35, 1])
+        with rleft:
+            fig_radar = go.Figure(go.Bar(
+                x=rdf["Variação %"].fillna(0),
+                y=rdf["Ativo"],
+                orientation="h",
+                text=[f"{v:+.2f}%" for v in rdf["Variação %"].fillna(0)],
+                textposition="outside",
+                hovertemplate="%{y}: %{x:.2f}%<extra></extra>"
+            ))
+            fig_radar.update_layout(
+                title="🔥 Altas e baixas do radar",
+                height=340,
+                margin=dict(l=10, r=35, t=45, b=10),
+                xaxis_title="Variação (%)",
+                yaxis_title="",
+                template="plotly_dark",
+                showlegend=False
+            )
+            st.plotly_chart(fig_radar, use_container_width=True, config={"displaylogo": False, "responsive": True})
+        with rright:
+            st.markdown("#### 📋 Ranking do radar")
+            view = rdf.copy()
+            view["Preço"] = view["Preço"].map(_fmt_brl)
+            view["Variação %"] = view["Variação %"].map(lambda x: f"{x:+.2f}%" if pd.notna(x) else "N/D")
+            view["Volume"] = view["Volume"].map(lambda x: f"{x:,.0f}".replace(",", "."))
+            st.dataframe(view.sort_values("Variação %", ascending=False), use_container_width=True, hide_index=True)
+    else:
+        st.warning("Não foi possível montar o radar agora. A fonte de dados pode estar indisponível.")
+
+    st.markdown("#### 🧭 Mapa por setor")
+    setor_rows = []
+    if radar_rows:
+        for row in radar_rows:
+            setor_rows.append({"Setor": SETOR_ATIVO.get(row["Ativo"], "Outros"), "Variação %": row["Variação %"]})
+        sdf = pd.DataFrame(setor_rows).dropna()
+        if not sdf.empty:
+            sdf = sdf.groupby("Setor", as_index=False)["Variação %"].mean().sort_values("Variação %", ascending=False)
+            st.dataframe(sdf.assign(**{"Variação %": sdf["Variação %"].map(lambda x: f"{x:+.2f}%")}), use_container_width=True, hide_index=True)
 
     st.markdown("### 📡 Realtime Hub")
     st.markdown('<div class="client-strip"><span><strong>Motor local de distribuição</strong> · mantém o último dado recebido e informa a idade/fonte.</span><span>⚠️ O Hub não cria cotações e não elimina atrasos da fonte upstream.</span></div>', unsafe_allow_html=True)
@@ -379,7 +442,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 st.caption("Ferramenta educacional. Indicadores, scores e cenários são hipotéticos e não constituem recomendação de investimento.")
-st.caption("🧭 V46.1 · Dashboard Profissional + Realtime Hub + Painel da Operação + Paper Trading + Central de Alertas + Backtest · Nenhuma ordem real é enviada")
+st.caption("🧭 V47 · Radar Mercado 360 + Dashboard Profissional + Realtime Hub + Painel da Operação + Paper Trading + Central de Alertas + Backtest · Nenhuma ordem real é enviada")
 
 # V41: painel do motor real-time local.
 try:
@@ -1572,7 +1635,7 @@ def painel():
         st.caption("Upstream alternativo: Yahoo Finance. O Hub local não transforma um feed atrasado em tick-by-tick.")
 
 
-st.markdown("<div class='footer'>BolsaIA V46.1 · Inteligência de Mercado · Demonstração educacional · Dashboard Profissional + Hub local + Painel da Operação + Paper Trading + Alertas + Backtest</div>", unsafe_allow_html=True)
+st.markdown("<div class='footer'>BolsaIA V47 · Inteligência de Mercado · Demonstração educacional · Dashboard Profissional + Hub local + Painel da Operação + Paper Trading + Alertas + Backtest</div>", unsafe_allow_html=True)
 
 if hasattr(st, "fragment"):
     @st.fragment(run_every="5s")

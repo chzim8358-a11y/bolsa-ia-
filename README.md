@@ -1,20 +1,7 @@
-# BolsaIA V46
+# BolsaIA V47
 
-## V46 — Dashboard Profissional
+V47 adiciona o **Radar Mercado 360°** ao Dashboard Profissional, com comparação observacional de variações, ranking de ativos e visão média por setor.
 
-A V46 evolui a base V45 corrigida com uma nova Home em formato de dashboard profissional.
+Também preserva os recursos das versões anteriores: Dashboard, Realtime Hub local, Scanner, Análise técnica, gestão de risco, Paper Trading, Alertas e Backtest.
 
-### Principais mudanças
-- Dashboard central com cards de ativos e estado do mercado.
-- Watchlist rápida na Home.
-- Ações rápidas para Scanner, Análise, Backtest e Alertas.
-- Realtime Hub destacado com transparência de fonte/idade dos dados.
-- Área de interface para Assistente IA.
-- Mantidos Backtest, Paper Trading, Alertas, Watchlist, Painel da Operação, calculadoras, indicadores e análise técnica da V45.
-- Navegação interna e telas secundárias preservadas.
-
-### Dados
-O Realtime Hub distribui localmente os dados recebidos; ele não fabrica cotações nem transforma uma fonte atrasada em tick-by-tick. Para produção, use um feed de mercado adequado/licenciado.
-
-### Segurança
-Nenhuma ordem real é enviada. Os sinais e cenários são educacionais e não constituem recomendação de investimento.
+> Ferramenta educacional/demonstrativa. Dados de mercado podem ter atraso conforme a fonte. Nenhuma ordem real é enviada.
