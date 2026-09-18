@@ -32,7 +32,7 @@ SETOR_ATIVO = {
 
 
 st.set_page_config(
-    page_title="BolsaIA V49 | Inteligência de Mercado",
+    page_title="BolsaIA V47 | Inteligência de Mercado",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -150,7 +150,7 @@ div[data-testid="stMetric"] { background:rgba(13,24,42,.82); border:1px solid rg
   <div class="brand-row">
     <img class="brand-logo" src="data:image/png;base64,LOGO_B64" />
     <div>
-      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V49</span></h1>
+      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V47</span></h1>
       <div class="tagline">Inteligência de mercado para análise técnica, radar e gestão de risco.</div>
       <div class="mini"><span class="chip">⚡ Scanner inteligente</span><span class="chip">📊 Análise técnica</span><span class="chip green">🛡️ Carteira simulada</span></div>
     </div>
@@ -194,7 +194,7 @@ if st.session_state.pagina != "🏠 Início":
         st.rerun()
 
 if st.session_state.pagina == "🧪 Backtest":
-    st.markdown("<div class='section'>🧪 Laboratório de Backtest V48</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section'>🧪 Laboratório de Backtest V47</div>", unsafe_allow_html=True)
     st.caption("Teste uma regra simples sobre dados históricos. O resultado é uma simulação retrospectiva e não representa previsão nem recomendação de investimento.")
 
     b1, b2, b3 = st.columns(3)
@@ -420,48 +420,6 @@ if st.session_state.pagina == "🏠 Início":
     else:
         st.warning("Não foi possível montar o radar agora. A fonte de dados pode estar indisponível.")
 
-    # V48 — Comparador Multiativo: coloca vários ativos lado a lado usando
-    # exatamente os dados observados pelo Radar 360, evitando novas chamadas
-    # de rede e deixando a comparação rápida e transparente.
-    st.markdown("### 🔎 Comparador Multiativo V49")
-    st.caption("Compare até 4 ativos observados pelo Radar 360. A comparação é descritiva e não constitui recomendação de investimento.")
-    radar_options = [r["Ativo"] for r in radar_rows] if radar_rows else radar_tickers
-    default_compare = radar_options[:4]
-    selecionados = st.multiselect(
-        "Ativos para comparar",
-        radar_options,
-        default=default_compare,
-        max_selections=4,
-        key="v49_comparador_ativos"
-    )
-    if selecionados:
-        comp = rdf[rdf["Ativo"].isin(selecionados)].copy()
-        comp["Setor"] = comp["Ativo"].map(lambda x: SETOR_ATIVO.get(x, "Outros"))
-        comp["Variação %"] = comp["Variação %"].round(2)
-        comp["Preço"] = comp["Preço"].round(2)
-        comp["Volume"] = comp["Volume"].astype(float).round(0)
-        st.dataframe(
-            comp[["Ativo", "Setor", "Preço", "Variação %", "Volume"]],
-            use_container_width=True,
-            hide_index=True,
-            column_config={
-                "Preço": st.column_config.NumberColumn("Preço (R$)", format="R$ %.2f"),
-                "Variação %": st.column_config.NumberColumn("Variação (%)", format="%+.2f%%"),
-                "Volume": st.column_config.NumberColumn("Volume", format="%.0f"),
-            },
-        )
-        csv = comp[["Ativo", "Setor", "Preço", "Variação %", "Volume"]].to_csv(index=False).encode("utf-8")
-        st.download_button(
-            "⬇️ Exportar comparação CSV",
-            data=csv,
-            file_name="bolsaia_comparador_v49.csv",
-            mime="text/csv",
-            use_container_width=True,
-            key="v49_export_comparador"
-        )
-    else:
-        st.info("Selecione pelo menos um ativo para comparar.")
-
     st.markdown("#### 🧭 Mapa por setor")
     setor_rows = []
     if radar_rows:
@@ -471,49 +429,6 @@ if st.session_state.pagina == "🏠 Início":
         if not sdf.empty:
             sdf = sdf.groupby("Setor", as_index=False)["Variação %"].mean().sort_values("Variação %", ascending=False)
             st.dataframe(sdf.assign(**{"Variação %": sdf["Variação %"].map(lambda x: f"{x:+.2f}%")}), use_container_width=True, hide_index=True)
-
-    st.markdown("### 🧠 Central de Inteligência V49")
-    st.caption("Síntese automática e explicável dos dados já calculados pelo app. Não usa IA generativa externa e não envia ordens.")
-    if not tabela.empty:
-        ci_ativo = st.selectbox("Ativo para leitura inteligente", tabela["Ativo"].tolist(), key="v49_ci_ativo")
-        ci_row = tabela[tabela["Ativo"] == ci_ativo].iloc[0]
-        score_ci = float(ci_row["Score"]) if pd.notna(ci_row.get("Score")) else None
-        rsi_ci = float(ci_row["RSI"]) if pd.notna(ci_row.get("RSI")) else None
-        mm20_ci = float(ci_row["MM20"]) if pd.notna(ci_row.get("MM20")) else None
-        mm50_ci = float(ci_row["MM50"]) if pd.notna(ci_row.get("MM50")) else None
-        adx_ci = float(ci_row["ADX"]) if pd.notna(ci_row.get("ADX")) else None
-        var_ci = float(ci_row["Variação"]) if pd.notna(ci_row.get("Variação")) else None
-        rr_ci = float(ci_row["R/R"]) if pd.notna(ci_row.get("R/R")) else None
-        fortes_ci, atencao_ci = [], []
-        if score_ci is not None:
-            (fortes_ci if score_ci >= 60 else atencao_ci).append(f"Score técnico em {score_ci:.0f}/100")
-        if mm20_ci is not None and mm50_ci is not None:
-            (fortes_ci if mm20_ci > mm50_ci else atencao_ci).append("MM20 acima da MM50" if mm20_ci > mm50_ci else "MM20 abaixo da MM50")
-        if rsi_ci is not None:
-            if rsi_ci < 30: fortes_ci.append("RSI em região de sobrevenda")
-            elif rsi_ci > 70: atencao_ci.append("RSI em região de sobrecompra")
-            else: fortes_ci.append("RSI em faixa intermediária")
-        if adx_ci is not None:
-            if adx_ci >= 25: fortes_ci.append(f"ADX {adx_ci:.1f}: tendência mais definida")
-            else: atencao_ci.append(f"ADX {adx_ci:.1f}: tendência menos definida")
-        if var_ci is not None:
-            (fortes_ci if var_ci >= 0 else atencao_ci).append(f"Variação observada {var_ci:+.2f}%")
-        if rr_ci is not None:
-            (fortes_ci if rr_ci >= 1.5 else atencao_ci).append(f"R/R técnico calculado em {rr_ci:.2f}")
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Score", f"{score_ci:.0f}/100" if score_ci is not None else "N/D")
-        c2.metric("RSI", f"{rsi_ci:.1f}" if rsi_ci is not None else "N/D")
-        c3.metric("ADX", f"{adx_ci:.1f}" if adx_ci is not None else "N/D")
-        p1, p2 = st.columns(2)
-        with p1:
-            st.markdown("**🟢 Pontos observados**")
-            for item in fortes_ci[:5]: st.markdown(f"- {item}")
-            if not fortes_ci: st.caption("Nenhum destaque calculável com os dados atuais.")
-        with p2:
-            st.markdown("**🟠 Pontos de atenção**")
-            for item in atencao_ci[:5]: st.markdown(f"- {item}")
-            if not atencao_ci: st.caption("Nenhum ponto de atenção calculável com os dados atuais.")
-        st.info(f"🧠 **Resumo:** {ci_ativo} apresenta os sinais técnicos acima com base nos dados disponíveis nesta atualização. A leitura é descritiva; não determina compra, venda ou retorno futuro. Fonte do preço: {ci_row.get('Fonte preço', 'N/D')} · Status: {ci_row.get('Status dado', 'N/D')}.")
 
     st.markdown("### 📡 Realtime Hub")
     st.markdown('<div class="client-strip"><span><strong>Motor local de distribuição</strong> · mantém o último dado recebido e informa a idade/fonte.</span><span>⚠️ O Hub não cria cotações e não elimina atrasos da fonte upstream.</span></div>', unsafe_allow_html=True)
@@ -544,7 +459,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 st.caption("Ferramenta educacional. Indicadores, scores e cenários são hipotéticos e não constituem recomendação de investimento.")
-st.caption("🧭 V49 · Central de Inteligência + Comparador Multiativo + Radar Mercado 360 + Dashboard Profissional + Realtime Hub + Painel da Operação + Paper Trading + Central de Alertas + Backtest · Nenhuma ordem real é enviada")
+st.caption("🧭 V47 · Radar Mercado 360 + Dashboard Profissional + Realtime Hub + Painel da Operação + Paper Trading + Central de Alertas + Backtest · Nenhuma ordem real é enviada")
 
 # V41: painel do motor real-time local.
 try:
@@ -1722,7 +1637,7 @@ def painel():
         st.caption("Upstream alternativo: Yahoo Finance. O Hub local não transforma um feed atrasado em tick-by-tick.")
 
 
-st.markdown("<div class='footer'>BolsaIA V48 · Inteligência de Mercado · Demonstração educacional · Dashboard Profissional + Hub local + Painel da Operação + Paper Trading + Alertas + Backtest</div>", unsafe_allow_html=True)
+st.markdown("<div class='footer'>BolsaIA V47 · Inteligência de Mercado · Demonstração educacional · Dashboard Profissional + Hub local + Painel da Operação + Paper Trading + Alertas + Backtest</div>", unsafe_allow_html=True)
 
 if hasattr(st, "fragment"):
     @st.fragment(run_every="5s")

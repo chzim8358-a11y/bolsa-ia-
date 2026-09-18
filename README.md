@@ -1,14 +1,7 @@
-# BolsaIA V49
+# BolsaIA V47
 
-## Grande mudança: Central de Inteligência
+V47 adiciona o **Radar Mercado 360°** ao Dashboard Profissional, com comparação observacional de variações, ranking de ativos e visão média por setor.
 
-A V49 adiciona uma camada explicável sobre os dados técnicos já calculados pelo app:
+Também preserva os recursos das versões anteriores: Dashboard, Realtime Hub local, Scanner, Análise técnica, gestão de risco, Paper Trading, Alertas e Backtest.
 
-- leitura individual por ativo;
-- Score, RSI e ADX em destaque;
-- pontos observados e pontos de atenção;
-- resumo descritivo com fonte e status do dado;
-- sem IA generativa externa e sem envio de ordens;
-- mantém Radar 360°, Comparador Multiativo, Mapa por setor, Realtime Hub, Scanner, Análise, Alertas, Backtest e Paper Trading.
-
-A Central de Inteligência é informativa e educacional; não determina compra, venda ou retorno futuro.
+> Ferramenta educacional/demonstrativa. Dados de mercado podem ter atraso conforme a fonte. Nenhuma ordem real é enviada.
