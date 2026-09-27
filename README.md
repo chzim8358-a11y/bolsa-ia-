@@ -1,8 +1,8 @@
-# BolsaIA V49
+# BolsaIA V51
 
 ## Grande mudança: Central de Inteligência
 
-A V49 adiciona uma camada explicável sobre os dados técnicos já calculados pelo app:
+A V51 adiciona uma camada explicável sobre os dados técnicos já calculados pelo app:
 
 - leitura individual por ativo;
 - Score, RSI e ADX em destaque;

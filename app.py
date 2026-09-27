@@ -32,7 +32,7 @@ SETOR_ATIVO = {
 
 
 st.set_page_config(
-    page_title="BolsaIA V50 | Inteligência de Mercado",
+    page_title="BolsaIA V51 | Inteligência de Mercado",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -408,7 +408,7 @@ def _texto_tendencia(media_score):
     return "🔴 Mercado mais defensivo", "Os sinais técnicos estão menos favoráveis; vale acompanhar o risco com atenção."
 
 if st.session_state.pagina == "🏠 Início":
-    st.markdown('<div class="section">🚀 Dashboard Profissional V50</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section">🚀 Dashboard Profissional V51</div>', unsafe_allow_html=True)
     st.info("👋 **Bem-vindo à BolsaIA.** A V46 transforma o Início em um painel central: mercado, ativos, alertas, dados e ferramentas ficam acessíveis em uma única visão.")
 
     # V46: cards de mercado. Os valores são obtidos sob demanda para evitar travamentos
@@ -1520,7 +1520,7 @@ def painel():
             st.caption("A evolução é registrada somente durante esta sessão do app; ela não representa histórico de rentabilidade real.")
 
             csv_carteira = carteira_df.to_csv(index=False).encode("utf-8")
-            st.download_button("⬇️ Exportar carteira CSV", csv_carteira, file_name="bolsaia_carteira_v36.csv", mime="text/csv")
+            st.download_button("⬇️ Exportar carteira CSV", csv_carteira, file_name="bolsaia_carteira_v51.csv", mime="text/csv")
     else:
         st.info("Nenhuma posição simulada cadastrada.")
 
@@ -1618,7 +1618,7 @@ def painel():
         # Simulador simples de renda com dividendos. Usa valores históricos
         # efetivamente registrados; não é uma previsão de pagamento futuro.
         st.markdown("### 🧮 Quanto você receberia em dividendos?")
-        qtd_custom = st.number_input("Quantidade de ações", min_value=1, value=100, step=1, key=f"qtd_div_v36_{ativo}")
+        qtd_custom = st.number_input("Quantidade de ações", min_value=1, value=100, step=1, key=f"qtd_div_v51_{ativo}")
         ultimo_por_acao = div.get("ultimo_dividendo")
         total_12m_por_acao = div.get("dividendos_12m")
         if ultimo_por_acao is not None:
@@ -1632,11 +1632,26 @@ def painel():
             ac = total_12m_por_acao * qtd_custom if total_12m_por_acao is not None else None
             s1, s2, s3 = st.columns(3)
             s1.metric("10 ações", f"R$ {r10:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
-                      help="Valor aproximado usando o último dividendo registrado por ação.")
+                      help="Dividendos aproximados usando o último dividendo registrado por ação.")
             s2.metric("100 ações", f"R$ {r100:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
-                      help="Valor aproximado usando o último dividendo registrado por ação.")
+                      help="Dividendos aproximados usando o último dividendo registrado por ação.")
             s3.metric("1.000 ações", f"R$ {r1000:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
-                      help="Valor aproximado usando o último dividendo registrado por ação.")
+                      help="Dividendos aproximados usando o último dividendo registrado por ação.")
+
+            # V51: mostra também o capital aproximado necessário para comprar cada quantidade.
+            # O cálculo usa o preço realtime do ativo no momento da consulta.
+            if preco is not None and preco > 0:
+                c10, c100, c1000 = st.columns(3)
+                c10.metric("💵 Capital para 10 ações", f"R$ {preco * 10:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
+                           help="Preço realtime × 10 ações. Não inclui custos, taxas ou impostos.")
+                c100.metric("💵 Capital para 100 ações", f"R$ {preco * 100:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
+                             help="Preço realtime × 100 ações. Não inclui custos, taxas ou impostos.")
+                c1000.metric("💵 Capital para 1.000 ações", f"R$ {preco * 1000:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
+                              help="Preço realtime × 1.000 ações. Não inclui custos, taxas ou impostos.")
+
+                capital_custom = preco * qtd_custom
+                st.info(f"💼 Para comprar **{qtd_custom:,} ações**, seriam necessários aproximadamente **R$ {capital_custom:,.2f}** ao preço realtime atual.".replace(",", "X").replace(".", ",").replace("X", "."))
+
             st.success(f"💰 Com **{qtd_custom:,} ações**, o último dividendo registrado corresponderia a aproximadamente **R$ {rc:,.2f}**.".replace(",", "X").replace(".", ",").replace("X", "."))
             if ac is not None:
                 st.info(f"📊 Se o ritmo dos últimos 12 meses se repetisse, **{qtd_custom:,} ações** representariam cerca de **R$ {ac:,.2f}** em dividendos no período.".replace(",", "X").replace(".", ",").replace("X", "."))
