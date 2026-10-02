@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root { color-scheme: dark; }
+  html, body { margin: 0; padding: 0; background: transparent; color: #f8fafc;
+    font: 13px -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .row { display: flex; gap: 6px; }
+  button { flex: 1; background: #0d1728; color: #f8fafc; border: 1px solid #1e3a5f;
+    border-radius: 8px; padding: 9px 6px; font-size: 13px; cursor: pointer; }
+  button:hover { border-color: #16c7ff; }
+  button.on { background: #0b3a52; border-color: #16c7ff; }
+  #status { margin: 8px 0 2px; color: #9fb3c8; font-size: 12px; line-height: 1.35; }
+  #hint { min-height: 16px; color: #16c7ff; font-size: 12px; }
+  #cam { display: none; width: 100%; max-height: 130px; object-fit: cover; border-radius: 8px;
+    background: #000; transform: scaleX(-1); margin-top: 6px; }
+  #cam.show { display: block; }
+</style>
+</head>
+<body>
+  <div class="row">
+    <button id="btnVoz" type="button">🎙️ Voz</button>
+    <button id="btnGesto" type="button">✋ Gestos</button>
+  </div>
+  <div id="status">Desligado. Ative a voz e/ou os gestos.</div>
+  <div id="hint"></div>
+  <video id="cam" playsinline muted></video>
+  <script src="main.js"></script>
+</body>
+</html>

@@ -13,6 +13,8 @@ from indicadores import calcular_indicadores
 from analisador import analisar, analisar_candles, calcular_plano
 from dividendos import obter_dividendos_yahoo
 from realtime_engine import RealtimeEngine
+import uuid
+import assistente as jarvis
 
 SETOR_ATIVO = {
     "PETR3":"Petróleo", "PETR4":"Petróleo", "PRIO3":"Petróleo",
@@ -150,7 +152,7 @@ div[data-testid="stMetric"] { background:rgba(13,24,42,.82); border:1px solid rg
   <div class="brand-row">
     <img class="brand-logo" src="data:image/png;base64,LOGO_B64" />
     <div>
-      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V50</span></h1>
+      <h1>BolsaIA <span style="font-size:.52em;color:#46cfff;">V52</span></h1>
       <div class="tagline">Inteligência de mercado para análise técnica, radar e gestão de risco.</div>
       <div class="mini"><span class="chip">⚡ Scanner inteligente</span><span class="chip">📊 Análise técnica</span><span class="chip green">🛡️ Carteira simulada</span></div>
     </div>
@@ -170,6 +172,69 @@ if "logado" not in st.session_state:
 # V45 fix: o Backtest é renderizado antes dos filtros do Scanner, então
 # o universo base precisa existir antes de qualquer selectbox que o use.
 ativos = list(ATIVOS_B3.keys())
+
+# V52: Jarvis — assistente por voz, gestos e texto.
+# Fica na barra lateral, que é renderizada em todas as telas, então continua ativo enquanto
+# o usuário navega pelo app (a aba precisa ficar aberta). Motor 100% local em assistente.py:
+# sem IA generativa externa, sem envio de ordens e sem recomendação de compra/venda.
+st.session_state.setdefault("jarvis_log", [])
+st.session_state.setdefault("jarvis_resposta", None)
+st.session_state.setdefault("jarvis_ultimo_id", None)
+
+
+def _jarvis_executar(texto, origem):
+    ctx = {
+        "snapshot": st.session_state.get("jarvis_snapshot"),
+        "universo": ativos,
+        "alertas": len(st.session_state.get("alertas_v44", [])),
+        "alertas_disparados": len(st.session_state.get("alertas_disparados_v44", [])),
+        "watchlist": st.session_state.get("watchlist_v44", []),
+    }
+    r = jarvis.processar(texto, ctx)
+    st.session_state.jarvis_log = (
+        st.session_state.jarvis_log + [{"origem": origem, "pergunta": texto, "resposta": r.texto}]
+    )[-20:]
+    # Só fala em voz alta quando o comando veio de voz ou gesto.
+    st.session_state.jarvis_resposta = {"id": uuid.uuid4().hex, "texto": r.fala, "falar": origem in ("voz", "gesto")}
+    if r.ativo:
+        st.session_state["analise_ativo_v35"] = r.ativo
+    if r.navegar:
+        st.session_state.pagina = r.navegar
+
+
+with st.sidebar:
+    st.markdown("### 🤖 Jarvis")
+    _jarvis_evento = jarvis.componente()(
+        resposta=st.session_state.jarvis_resposta,
+        gestos=jarvis.GESTOS,
+        palavras=jarvis.PALAVRAS_CHAVE,
+        hold_ms=jarvis.HOLD_MS,
+        cooldown_ms=jarvis.COOLDOWN_MS,
+        key="jarvis_v52",
+        default=None,
+    )
+    with st.form("jarvis_form_v52", clear_on_submit=True):
+        _jarvis_txt = st.text_input("Comando", placeholder="ex.: como está PETR4?", label_visibility="collapsed")
+        _jarvis_enviar = st.form_submit_button("Enviar ao Jarvis", use_container_width=True)
+    if st.session_state.jarvis_log:
+        _ult = st.session_state.jarvis_log[-1]
+        _icone = {"voz": "🎙️", "gesto": "✋", "texto": "⌨️"}.get(_ult["origem"], "💬")
+        st.caption(f"{_icone} {_ult['pergunta']}")
+        st.markdown(_ult["resposta"])
+    with st.expander("Comandos, gestos e privacidade"):
+        st.markdown(jarvis.texto_ajuda_markdown())
+
+_jarvis_novo = None
+if _jarvis_enviar and _jarvis_txt.strip():
+    _jarvis_novo = (_jarvis_txt.strip(), "texto")
+elif isinstance(_jarvis_evento, dict) and _jarvis_evento.get("id") and _jarvis_evento["id"] != st.session_state.jarvis_ultimo_id:
+    # O componente devolve o último evento a cada execução; o id evita processar o mesmo comando duas vezes.
+    st.session_state.jarvis_ultimo_id = _jarvis_evento["id"]
+    _origem = _jarvis_evento.get("origem")
+    _jarvis_novo = (str(_jarvis_evento.get("texto", ""))[:300], _origem if _origem in ("voz", "gesto") else "voz")
+if _jarvis_novo:
+    _jarvis_executar(*_jarvis_novo)
+    st.rerun()
 
 st.markdown("<div class='section'>🚀 Atalhos</div>", unsafe_allow_html=True)
 nav_cols = st.columns(8)
@@ -988,6 +1053,7 @@ def painel():
             mudancas.append(f"{ativo_sinal}: {anteriores[ativo_sinal]} → {sinal_atual}")
     st.session_state.ultimos_sinais = atual_sinais
     st.session_state.ultima_atualizacao_painel = pd.Timestamp.now(tz="America/Sao_Paulo")
+    st.session_state.jarvis_snapshot = {"quando": st.session_state.ultima_atualizacao_painel, "tabela": tabela.copy()}
     if mudancas:
         st.warning("🔔 Mudança de sinal: " + " · ".join(mudancas))
 
@@ -1870,7 +1936,7 @@ def painel():
         st.caption("Upstream alternativo: Yahoo Finance. O Hub local não transforma um feed atrasado em tick-by-tick.")
 
 
-st.markdown("<div class='footer'>BolsaIA V48 · Inteligência de Mercado · Demonstração educacional · Dashboard Profissional + Hub local + Painel da Operação + Paper Trading + Alertas + Backtest</div>", unsafe_allow_html=True)
+st.markdown("<div class='footer'>BolsaIA V52 · Inteligência de Mercado · Demonstração educacional · Dashboard Profissional + Hub local + Painel da Operação + Paper Trading + Alertas + Backtest</div>", unsafe_allow_html=True)
 
 if hasattr(st, "fragment"):
     @st.fragment(run_every="5s")
