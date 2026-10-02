@@ -34,7 +34,7 @@ SETOR_ATIVO = {
 
 
 st.set_page_config(
-    page_title="BolsaIA V51 | Inteligência de Mercado",
+    page_title="BolsaIA V52 | Inteligência de Mercado",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -202,36 +202,62 @@ def _jarvis_executar(texto, origem):
         st.session_state.pagina = r.navegar
 
 
+_jarvis_evento = None
+_jarvis_component_ok = True
+
 with st.sidebar:
     st.markdown("### 🤖 Jarvis")
-    _jarvis_evento = jarvis.componente()(
-        resposta=st.session_state.jarvis_resposta,
-        gestos=jarvis.GESTOS,
-        palavras=jarvis.PALAVRAS_CHAVE,
-        hold_ms=jarvis.HOLD_MS,
-        cooldown_ms=jarvis.COOLDOWN_MS,
-        key="jarvis_v52",
-        default=None,
-    )
+    # O componente de voz/câmera é opcional. Se o navegador/Streamlit tiver
+    # algum problema com o iframe, o restante da BolsaIA continua funcionando.
+    try:
+        _jarvis_evento = jarvis.componente()(
+            resposta=st.session_state.jarvis_resposta,
+            gestos=jarvis.GESTOS,
+            palavras=jarvis.PALAVRAS_CHAVE,
+            hold_ms=jarvis.HOLD_MS,
+            cooldown_ms=jarvis.COOLDOWN_MS,
+            key="jarvis_v52",
+            default=None,
+        )
+    except Exception as _jarvis_err:
+        _jarvis_component_ok = False
+        st.warning("O painel de voz/gestos do Jarvis não carregou. O comando por texto continua disponível.")
+        st.caption(f"Detalhe técnico: {type(_jarvis_err).__name__}")
+
     with st.form("jarvis_form_v52", clear_on_submit=True):
-        _jarvis_txt = st.text_input("Comando", placeholder="ex.: como está PETR4?", label_visibility="collapsed")
+        _jarvis_txt = st.text_input(
+            "Comando",
+            placeholder="ex.: como está PETR4?",
+            label_visibility="collapsed",
+        )
         _jarvis_enviar = st.form_submit_button("Enviar ao Jarvis", use_container_width=True)
+
     if st.session_state.jarvis_log:
         _ult = st.session_state.jarvis_log[-1]
         _icone = {"voz": "🎙️", "gesto": "✋", "texto": "⌨️"}.get(_ult["origem"], "💬")
         st.caption(f"{_icone} {_ult['pergunta']}")
         st.markdown(_ult["resposta"])
+
     with st.expander("Comandos, gestos e privacidade"):
         st.markdown(jarvis.texto_ajuda_markdown())
 
 _jarvis_novo = None
 if _jarvis_enviar and _jarvis_txt.strip():
     _jarvis_novo = (_jarvis_txt.strip(), "texto")
-elif isinstance(_jarvis_evento, dict) and _jarvis_evento.get("id") and _jarvis_evento["id"] != st.session_state.jarvis_ultimo_id:
+elif (
+    _jarvis_component_ok
+    and isinstance(_jarvis_evento, dict)
+    and _jarvis_evento.get("id")
+    and _jarvis_evento["id"] != st.session_state.jarvis_ultimo_id
+):
     # O componente devolve o último evento a cada execução; o id evita processar o mesmo comando duas vezes.
     st.session_state.jarvis_ultimo_id = _jarvis_evento["id"]
     _origem = _jarvis_evento.get("origem")
-    _jarvis_novo = (str(_jarvis_evento.get("texto", ""))[:300], _origem if _origem in ("voz", "gesto") else "voz")
+    _jarvis_novo = (
+        str(_jarvis_evento.get("texto", ""))[:300],
+        _origem if _origem in ("voz", "gesto") else "voz",
+    )
+
 if _jarvis_novo:
     _jarvis_executar(*_jarvis_novo)
     st.rerun()
@@ -647,69 +673,89 @@ if st.session_state.pagina == "🏠 Início":
 
     st.markdown("### 🧠 Central de Inteligência V49")
     st.caption("Síntese automática e explicável dos dados disponíveis. A Central é independente do Scanner e não usa IA generativa externa nem envia ordens.")
-    # V49 FIX: a Central de Inteligência era executada antes da variável `tabela`
-    # do Scanner ser criada, causando NameError na página inicial. Agora ela
-    # calcula os indicadores sob demanda para o ativo escolhido.
+
+    # V49 FIX: calcula os indicadores sob demanda e mantém a apresentação
+    # fora do bloco de exceção. Assim, uma falha de dados não quebra a página.
     ci_options = radar_options if radar_options else ["PETR4", "VALE3", "ITUB4", "BBAS3"]
     ci_ativo = st.selectbox("Ativo para leitura inteligente", ci_options, key="v49_ci_ativo")
+
     ci_row = None
+    score_ci = rsi_ci = mm20_ci = mm50_ci = adx_ci = rr_ci = var_ci = None
     try:
         ci_df = dados_yahoo(ci_ativo, periodo="1y", intervalo="1d")
         if ci_df is not None and not ci_df.empty:
             ci_df = calcular_indicadores(ci_df)
-            ultima_ci = ci_df.dropna(subset=["Close", "RSI"]).iloc[-1]
-            score_base, _, _ = analisar(ultima_ci, "NEUTRO")
-            ci_row = ultima_ci
-            score_ci = float(score_base)
-            rsi_ci = float(ultima_ci.get("RSI")) if pd.notna(ultima_ci.get("RSI")) else None
-            mm20_ci = float(ultima_ci.get("MM20")) if pd.notna(ultima_ci.get("MM20")) else None
-            mm50_ci = float(ultima_ci.get("MM50")) if pd.notna(ultima_ci.get("MM50")) else None
-            adx_ci = float(ultima_ci.get("ADX14")) if pd.notna(ultima_ci.get("ADX14")) else None
-            rr_ci = None
-            try:
-                rr_ci = calcular_plano(ultima_ci).get("risco_retorno")
-            except Exception:
-                pass
-            var_ci = None
-            if len(ci_df) >= 2:
-                prev_ci = float(ci_df["Close"].dropna().iloc[-2])
-                last_ci = float(ultima_ci["Close"])
-                var_ci = ((last_ci / prev_ci) - 1) * 100 if prev_ci else None
-        else:
-            score_ci = rsi_ci = mm20_ci = mm50_ci = adx_ci = rr_ci = var_ci = None
+            valid_ci = ci_df.dropna(subset=["Close", "RSI"])
+            if not valid_ci.empty:
+                ultima_ci = valid_ci.iloc[-1]
+                score_base, _, _ = analisar(ultima_ci, "NEUTRO")
+                ci_row = ultima_ci
+                score_ci = float(score_base)
+                rsi_ci = float(ultima_ci.get("RSI")) if pd.notna(ultima_ci.get("RSI")) else None
+                mm20_ci = float(ultima_ci.get("MM20")) if pd.notna(ultima_ci.get("MM20")) else None
+                mm50_ci = float(ultima_ci.get("MM50")) if pd.notna(ultima_ci.get("MM50")) else None
+                adx_ci = float(ultima_ci.get("ADX14")) if pd.notna(ultima_ci.get("ADX14")) else None
+                try:
+                    rr_ci = calcular_plano(ultima_ci).get("risco_retorno")
+                except Exception:
+                    rr_ci = None
+                if len(valid_ci) >= 2:
+                    prev_ci = float(valid_ci["Close"].iloc[-2])
+                    last_ci = float(ultima_ci["Close"])
+                    var_ci = ((last_ci / prev_ci) - 1) * 100 if prev_ci else None
     except Exception:
-        score_ci = rsi_ci = mm20_ci = mm50_ci = adx_ci = rr_ci = var_ci = None
-        fortes_ci, atencao_ci = [], []
-        if score_ci is not None:
-            (fortes_ci if score_ci >= 60 else atencao_ci).append(f"Score técnico em {score_ci:.0f}/100")
-        if mm20_ci is not None and mm50_ci is not None:
-            (fortes_ci if mm20_ci > mm50_ci else atencao_ci).append("MM20 acima da MM50" if mm20_ci > mm50_ci else "MM20 abaixo da MM50")
-        if rsi_ci is not None:
-            if rsi_ci < 30: fortes_ci.append("RSI em região de sobrevenda")
-            elif rsi_ci > 70: atencao_ci.append("RSI em região de sobrecompra")
-            else: fortes_ci.append("RSI em faixa intermediária")
-        if adx_ci is not None:
-            if adx_ci >= 25: fortes_ci.append(f"ADX {adx_ci:.1f}: tendência mais definida")
-            else: atencao_ci.append(f"ADX {adx_ci:.1f}: tendência menos definida")
-        if var_ci is not None:
-            (fortes_ci if var_ci >= 0 else atencao_ci).append(f"Variação observada {var_ci:+.2f}%")
-        if rr_ci is not None:
-            (fortes_ci if rr_ci >= 1.5 else atencao_ci).append(f"R/R técnico calculado em {rr_ci:.2f}")
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Score", f"{score_ci:.0f}/100" if score_ci is not None else "N/D")
-        c2.metric("RSI", f"{rsi_ci:.1f}" if rsi_ci is not None else "N/D")
-        c3.metric("ADX", f"{adx_ci:.1f}" if adx_ci is not None else "N/D")
-        p1, p2 = st.columns(2)
-        with p1:
-            st.markdown("**🟢 Pontos observados**")
-            for item in fortes_ci[:5]: st.markdown(f"- {item}")
-            if not fortes_ci: st.caption("Nenhum destaque calculável com os dados atuais.")
-        with p2:
-            st.markdown("**🟠 Pontos de atenção**")
-            for item in atencao_ci[:5]: st.markdown(f"- {item}")
-            if not atencao_ci: st.caption("Nenhum ponto de atenção calculável com os dados atuais.")
-        fonte_ci = "Yahoo" if ci_row is not None else "N/D"
-        st.info(f"🧠 **Resumo:** {ci_ativo} apresenta os sinais técnicos acima com base nos dados disponíveis nesta atualização. A leitura é descritiva; não determina compra, venda ou retorno futuro. Fonte do preço: {fonte_ci} · Indicadores calculados localmente a partir da série histórica disponível.")
+        pass
+
+    fortes_ci, atencao_ci = [], []
+    if score_ci is not None:
+        (fortes_ci if score_ci >= 60 else atencao_ci).append(f"Score técnico em {score_ci:.0f}/100")
+    if mm20_ci is not None and mm50_ci is not None:
+        (fortes_ci if mm20_ci > mm50_ci else atencao_ci).append(
+            "MM20 acima da MM50" if mm20_ci > mm50_ci else "MM20 abaixo da MM50"
+        )
+    if rsi_ci is not None:
+        if rsi_ci < 30:
+            fortes_ci.append("RSI em região de sobrevenda")
+        elif rsi_ci > 70:
+            atencao_ci.append("RSI em região de sobrecompra")
+        else:
+            fortes_ci.append("RSI em faixa intermediária")
+    if adx_ci is not None:
+        if adx_ci >= 25:
+            fortes_ci.append(f"ADX {adx_ci:.1f}: tendência mais definida")
+        else:
+            atencao_ci.append(f"ADX {adx_ci:.1f}: tendência menos definida")
+    if var_ci is not None:
+        (fortes_ci if var_ci >= 0 else atencao_ci).append(f"Variação observada {var_ci:+.2f}%")
+    if rr_ci is not None:
+        (fortes_ci if rr_ci >= 1.5 else atencao_ci).append(f"R/R técnico calculado em {rr_ci:.2f}")
+
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Score", f"{score_ci:.0f}/100" if score_ci is not None else "N/D")
+    c2.metric("RSI", f"{rsi_ci:.1f}" if rsi_ci is not None else "N/D")
+    c3.metric("ADX", f"{adx_ci:.1f}" if adx_ci is not None else "N/D")
+
+    p1, p2 = st.columns(2)
+    with p1:
+        st.markdown("**🟢 Pontos observados**")
+        for item in fortes_ci[:5]:
+            st.markdown(f"- {item}")
+        if not fortes_ci:
+            st.caption("Nenhum destaque calculável com os dados atuais.")
+    with p2:
+        st.markdown("**🟠 Pontos de atenção**")
+        for item in atencao_ci[:5]:
+            st.markdown(f"- {item}")
+        if not atencao_ci:
+            st.caption("Nenhum ponto de atenção calculável com os dados atuais.")
+
+    fonte_ci = "Yahoo" if ci_row is not None else "N/D"
+    if ci_row is not None:
+        st.info(
+            f"🧠 **Resumo:** {ci_ativo} apresenta os sinais técnicos acima com base nos dados disponíveis "
+            f"nesta atualização. A leitura é descritiva; não determina compra, venda ou retorno futuro. "
+            f"Fonte do preço: {fonte_ci} · Indicadores calculados localmente a partir da série histórica disponível."
+        )
     else:
         st.warning("Não foi possível calcular a leitura inteligente deste ativo agora. Tente novamente em alguns segundos.")
 
